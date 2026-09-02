@@ -1124,6 +1124,9 @@ DEBUG ONLY **/
                 this.#componentTemplates.set(template.id, template)
             }
         }
+        if (this.#componentLibrary.templates.length === 0) {
+            window.alert('Cannot find any bond graph template definitions...')
+        }
     }
 
     #loadBaseComponents() {
