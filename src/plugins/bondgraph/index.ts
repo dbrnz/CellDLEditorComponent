@@ -447,17 +447,6 @@ export class BondgraphPlugin implements PluginInterface {
     //==========================================================================
     //==========================================================================
 
-    addComponent(component: CellDLObject) {
-        const pluginData = <PluginData>component.pluginData(this.id)
-        this.#domainGraph.addNode(component.uri.value,
-            pluginData.elementTemplate?.domain,
-            pluginData.baseComponent.type === this.#transformNodeType)
-    }
-
-    componentDeleted(component: CellDLObject) {
-        this.#domainGraph.deleteNode(component.uri.value)
-    }
-
     getPluginData(celldlObject: CellDLObject): object {
         if (celldlObject.isConnection) {
             return {
@@ -511,6 +500,20 @@ export class BondgraphPlugin implements PluginInterface {
             domain = this.#domainGraph.getDomain(celldlObject.uri.value)
         }
         return domain ? $rdf.getFragment(domain) : ''
+    }
+
+    //==========================================================================
+    //==========================================================================
+
+    addComponent(component: CellDLObject) {
+        const pluginData = <PluginData>component.pluginData(this.id)
+        this.#domainGraph.addNode(component.uri.value,
+            pluginData.elementTemplate?.domain,
+            pluginData.baseComponent.type === this.#transformNodeType)
+    }
+
+    componentDeleted(component: CellDLObject) {
+        this.#domainGraph.deleteNode(component.uri.value)
     }
 
     //==========================================================================
