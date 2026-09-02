@@ -41,11 +41,11 @@
         "./style.css": "./dist/CellDLEditor.css"
     },
     "scripts": {
-        "build": "vite --config vite.config.ts build app && bun scripts/generate.version.js",
-        "build:dev": "vite --config vite.config.ts build app --base / && bun scripts/generate.version.js",
-        "build:lib": "vite build --config vite.lib.config.ts",
+        "build": "./scripts/install-bgrdf.sh && vite --config vite.config.ts build app && bun scripts/generate.version.js",
+        "build:dev": "./scripts/install-bgrdf.sh && vite --config vite.config.ts build app --base / && bun scripts/generate.version.js",
+        "build:lib": "./scripts/install-bgrdf.sh && vite build --config vite.lib.config.ts",
         "clean": "bun scripts/clean.js",
-        "dev": "vite --config vite.config.ts app",
+        "dev": "./scripts/install-bgrdf.sh && vite --config vite.config.ts app",
         "docs": "bunx typedoc",
         "format": "bunx --bun biome format --config-path ./biome.json --fix --max-diagnostics=none",
         "format:check": "bunx --bun biome format --config-path ./biome.json --max-diagnostics=none",

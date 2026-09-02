@@ -24,7 +24,7 @@ import { initialised, RdfStore, type Statement } from '@celldl/rdf'
 
 // URIs for the BG-RDF framework
 
-const BGF_ONTOLOGY_URI = 'https://bg-rdf.org/ontologies/bondgraph-framework'
+export const BGF_ONTOLOGY_URI = 'https://bg-rdf.org/ontologies/bondgraph-framework'
 
 const BG_RDF_TEMPLATE_BASE_URI = 'https://bg-rdf.org/'
 
@@ -49,7 +49,7 @@ const BG_RDF_ONTOLOGY_ASSET_PATH = `${BG_RDF_ASSET_BASE}ontology.ttl`
 
 // N.B. The path to `glob()` must be a literal, not a computed constant
 
-const BG_RDF_ONTOLOGY_SOURCE: Record<string, string> = import.meta.glob('/src/assets/bg-rdf/ontology.ttl', {
+const BG_RDF_ONTOLOGY_SOURCE: Record<string, string> = import.meta.glob('#root/assets/bg-rdf/ontology.ttl', {
     eager: true,
     import: 'default',
     query: '?raw'
@@ -64,7 +64,7 @@ for (const [path, data] of Object.entries(BG_RDF_ONTOLOGY_SOURCE)) {
 
 // N.B. The path to `glob()` must be a literal, not a computed constant
 
-const BG_RDF_TEMPLATE_SOURCES: Record<string, string> = import.meta.glob('/src/assets/bg-rdf/templates/*.ttl', {
+const BG_RDF_TEMPLATE_SOURCES: Record<string, string> = import.meta.glob('#root/assets/bg-rdf/templates/*.ttl', {
     eager: true,
     import: 'default',
     query: '?raw'
