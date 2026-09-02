@@ -290,12 +290,9 @@ export class BondgraphPlugin implements PluginInterface {
     #componentLibrary: BGComponentLibrary = {
         id: this.id,
         name: 'Bondgraph',
-        templates: BONDGRAPH_COMPONENT_DEFINITIONS.map(defn => definitionToLibraryTemplate(defn))
+        templates: []
     }
-    #componentTemplates: Map<string, BGLibraryComponentTemplate> = new Map(
-        this.#componentLibrary.templates.map((c: BGLibraryComponentTemplate) => [c.id, c])
-    )
-
+    #componentTemplates: Map<string, BGLibraryComponentTemplate> = new Map()
     #currentDocumentUri: string = ''
     #physicalDomains: Map<string, PhysicalDomain> = new Map()
     #rdfStore: MetadataStore = new MetadataStore()
@@ -304,6 +301,7 @@ export class BondgraphPlugin implements PluginInterface {
     constructor() {
         this.#propertyGroups = PROPERTY_GROUPS()
         this.#rdfStore.addStatements(bgRdfStatements())
+        this.#initialiseComponentLibrary()
         this.#loadDomains()
         this.#loadBaseComponents()
         this.#assignTemplates()
@@ -1103,6 +1101,29 @@ DEBUG ONLY **/
                 },
             })
         })
+    }
+
+    #initialiseComponentLibrary() {
+        const elements: Set<string> = new Set()
+        this.#query(`
+            SELECT ?element WHERE {
+                ?element rdfs:subClassOf ?base .
+                ?base rdfs:subClassOf* ?bgClass .
+                FILTER (
+                   sameTerm(?bgClass, bgf:BondElement)
+                || sameTerm(?bgClass, bgf:JunctionStructure))
+            } order by ?element`
+        ).forEach((r) => {
+            const element = r.get('element')!
+            elements.add(element.value)
+        })
+        for (const defn of BONDGRAPH_COMPONENT_DEFINITIONS) {
+            const template = definitionToLibraryTemplate(defn)
+            if (elements.has(template.type)) {
+                this.#componentLibrary.templates.push(template)
+                this.#componentTemplates.set(template.id, template)
+            }
+        }
     }
 
     #loadBaseComponents() {
