@@ -195,6 +195,6 @@ async function toolButtonClick(e: MouseEvent) {
 }
 
 .active {
-    background-color: #3584e4 !important;
+    background-color: #4488cc !important;
 }
 </style>
