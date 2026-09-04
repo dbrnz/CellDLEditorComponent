@@ -14,10 +14,17 @@
         :aria-label="prompt"
         @click="toolButtonClick"
     )
+        component(
+            :is="buttonIcon"
+            v-if="buttonIcon"
+            :size="24"
+            stroke-width="1.5"
+        )
 </template>
 
 <script setup lang="ts">
 import * as vue from 'vue'
+import * as LucideIcons from '@lucide/vue'
 
 const props = defineProps<{
     toolId?: string
@@ -32,7 +39,7 @@ const props = defineProps<{
 
 const buttonClasses = vue.computed(() => {
     const classes = []
-    if (props.icon) {
+    if (props.icon && !props.icon.startsWith('lucide-')) {
         classes.push(props.icon)
     }
     if (props.active) {
@@ -45,6 +52,12 @@ const buttonClasses = vue.computed(() => {
         classes.push('image')
     }
     return classes.join(' ')
+})
+
+const buttonIcon = vue.computed(() => {
+    if (props.icon?.startsWith('lucide-')) {
+        return (LucideIcons as Record<string, any>)[props.icon.slice(7)]
+    }
 })
 
 const buttonStyle = vue.computed(() => {
@@ -91,7 +104,11 @@ const emit = defineEmits<{
 }>()
 
 async function toolButtonClick(e: MouseEvent) {
-    const target: HTMLElement | null = e.target as HTMLElement
+    const clickedElement: HTMLElement | null = e.target as HTMLElement
+    let target: HTMLElement | null = clickedElement
+    while (target && !target.classList.contains('tool-button')) {
+        target = target.parentElement
+    }
     if (target) {
         if (props.type === 'panel') {
             // Simply toggle the panel button; event emission controls panel visibility
@@ -133,6 +150,8 @@ async function toolButtonClick(e: MouseEvent) {
     border-style: solid;
     border-color: var(--editor-border-color);
     border-width: 0 1px 2px;
+    display: grid;
+    place-items: center;
 }
 .tool-button:hover {
     background-color: lightgrey;
