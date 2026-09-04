@@ -111,7 +111,7 @@ async function toolButtonClick(e: MouseEvent) {
     }
     if (target) {
         if (props.type === 'panel') {
-            // Simply toggle the panel button; event emission controls panel visibility
+            // Simply toggle the panel's button; event emission controls panel visibility
 
             target.classList.toggle('active')
         } else {
