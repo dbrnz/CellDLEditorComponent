@@ -13,7 +13,7 @@
     --editor-statusbar-background: var(--p-surface-700);
 }
 
-svg {
+#svg-container svg {
     background-color: var(--editor-canvas-background);
     user-select: none;
     /* Element states while editing */
@@ -24,17 +24,17 @@ svg {
     --connection-selected: #f00;
     --connection-highlighted: #0f8;
 }
-.celldl-background {
+#svg-container .celldl-background {
     pointer-events: none;
 }
-.selection-element {
+#svg-container .selection-element {
     fill: none;
     pointer-events: all;
     stroke-opacity: 0.8;
     stroke-width: 3;
     rx: 8px;
 }
-.control-rectangle.selected {
+#svg-container .control-rectangle.selected {
     fill: #f00;
     opacity: 0.4;
     stroke: #f0f;
@@ -43,28 +43,28 @@ svg {
 }
 
 /* Alignment guides */
-.alignment-grid {
+#svg-container .alignment-grid {
     stroke: #08f;
     stroke-width: 0.4;
     stroke-opacity: 0.3;
 }
-.alignment-guide {
+#svg-container .alignment-guide {
     stroke: none;
 }
-.alignment-guide.visible {
+#svg-container .alignment-guide.visible {
     stroke: #08f;
     stroke-width: 1;
     stroke-opacity: 0.8;
 }
 
 /* Control points */
-.control-point {
+#svg-container .control-point {
     fill: #00c;
     opacity: 0.8;
     stroke: #00c;
     stroke-width: 2;
 }
-.control-point.fixed {
+#svg-container .control-point.fixed {
     fill: white;
 }
 #celldl-editor-selection-frame.highlight .control-point {
@@ -76,19 +76,19 @@ svg {
 }
 
 /* Active, highlighted, and selected objects */
-.active:not(.celldl-Connection) {
+#svg-container .active:not(.celldl-Connection) {
     stroke: var(--active) !important;
 }
-.selected:not(.celldl-Connection) {
+#svg-container .selected:not(.celldl-Connection) {
     stroke: var(--selected) !important;
 }
-.highlight:not(.celldl-Connection) {
+#svg-container .highlight:not(.celldl-Connection) {
     stroke: var(--highlighted) !important;
 }
-.active.selected:not(.celldl-Connection) {
+#svg-container .active.selected:not(.celldl-Connection) {
     stroke: var(--active-selected) !important;
 }
-.selection-rect {
+#svg-container .selection-rect {
     fill: #ccc;
     fill-opacity: 0.2;
     stroke: var(--p-surface-0);
@@ -97,55 +97,55 @@ svg {
 }
 
 /* Components */
-.celldl-Component.editor {
+#svg-container .celldl-Component.editor {
     pointer-events: all;
 }
 
 /* Conduits */
-.selection-element.conduit {
+#svg-container .selection-element.conduit {
     opacity: 0.5;
 }
-.active + .conduit {
+#svg-container .active + .conduit {
     fill: var(--active);
 }
-.highlight + .conduit {
+#svg-container .highlight + .conduit {
     fill: var(--highlighted);
 }
-.active.selected + .conduit {
+#svg-container .active.selected + .conduit {
     fill: var(--active-selected) !important;
 }
 
 /* Interfaces */
-.celldl-InterfacePort .selection-element.selected {
+#svg-container .celldl-InterfacePort .selection-element.selected {
     stroke: var(--connection-selected);
 }
-.celldl-InterfacePort.highlight {
+#svg-container .celldl-InterfacePort.highlight {
     fill: var(--highlighted) !important;
 }
 
 /* Connections */
-.celldl-Connection .selection-element.highlight {
-    stroke: var(--connection-highlighted) !important;
+#svg-container .celldl-Connection .selection-element.highlight {
+    stroke: var(--connection-highlighted) !important; /* versus highlighted?? */
 }
-.shadow {
+#svg-container .shadow {
     fill: none;
     stroke: #ccc;
     stroke-width: 8;
     opacity: 0.001;
 }
-.shadow.active {
+#svg-container .shadow.active {
     stroke: var(--active);
     opacity: 0.4;
 }
-.shadow.active.selected {
+#svg-container .shadow.active.selected {
     stroke: var(--active-selected);
     opacity: 0.4;
 }
-.shadow.highlight {
+#svg-container .shadow.highlight {
     stroke: var(--highlighted);
     opacity: 0.4;
 }
-.shadow.selected {
+#svg-container .shadow.selected {
     stroke: var(--selected);
     opacity: 0.4;
 }
