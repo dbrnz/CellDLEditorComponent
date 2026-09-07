@@ -72,6 +72,7 @@ import PropertiesPanel from '#root/components/panels/PropertiesPanel.vue'
 import { componentLibraryPlugin } from '#root/plugins'
 import { BondgraphPlugin } from '#root/plugins/bondgraph'
 // WIP import { ElectricalPlugin } from '#root/plugins/electrical'
+import type { ViewState } from '#root/utils/EditorState'
 
 import { TestCellDLEditor, testEditor } from '../../tests/editor'
 
@@ -80,14 +81,63 @@ import type { ContextMenuProps } from './widgets/EditorContextMenu.vue'
 
 //==============================================================================
 
-import type {
-    EditorData,
-    CellDLEditorProps,
-    EditorEditCommand,
-    EditorFileCommand,
-    EditorSetStateCommand,
-    EditorViewCommand
-} from './EditorComponent.vue'
+export type Theme = 'light' | 'dark' | 'system';
+
+//==============================================================================
+
+export type EditorEditCommand = {
+    command: 'edit'
+    options: {
+        action: string
+    }
+}
+
+export type EditorExportCommand = {
+    command: 'export'
+    options: {
+        action: string
+    }
+}
+
+export type EditorFileCommand = {
+    command: 'file'
+    options: {
+        action: string
+        data?: string
+        kind?: string   // export,
+        name?: string
+        type?: string   // For export: `cellml`, `omex`
+    }
+}
+
+export type EditorSetStateCommand = {
+    command: 'set-state'
+    options: {
+        action: string
+    }
+}
+
+export type EditorViewCommand = {
+    command: 'view'
+    options: ViewState
+}
+
+export type CellDLEditorCommand = EditorEditCommand
+                                | EditorExportCommand
+                                | EditorFileCommand
+                                | EditorSetStateCommand
+                                | EditorViewCommand
+
+//==============================================================================
+
+export interface CellDLEditorProps {
+    editorCommand?: CellDLEditorCommand
+    theme?: Theme
+}
+export type EditorData = {
+    data: string
+    kind?: string
+}
 
 //==============================================================================
 //==============================================================================

@@ -18,7 +18,7 @@ limitations under the License.
 
 ******************************************************************************/
 
-import CellDLEditor from '#root/components/EditorComponent.vue'
+import CellDLEditor from '#root/components/EditorComponent'
 
 //==============================================================================
 
@@ -41,7 +41,7 @@ export type {
     EditorSetStateCommand,
     EditorViewCommand,
     Theme
-} from '#root/components/EditorComponent.vue'
+} from '#root/components/WrappedEditor.vue'
 
 export { editorInitialised } from '#root/utils'
 
