@@ -36,3 +36,6 @@ docs/
 
 # unplugin-vue-components
 components.d.ts
+
+# BG-RDF
+src/assets/bg-rdf/*
