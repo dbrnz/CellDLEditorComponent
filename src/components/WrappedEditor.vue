@@ -50,7 +50,6 @@ import '#root/assets/icons.css'
 
 import * as vueCommon from '#root/utils/vueCommon'
 
-import { type LibraryComponentTemplate } from '#editor/components'
 import type { StyleObject } from '#editor/components/properties'
 import { DEFAULT_CONNECTION_STYLE_DEFINITION } from '#editor/connections'
 import { CellDLDiagram } from '#editor/diagram'
