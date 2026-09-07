@@ -74,7 +74,8 @@ import type { ConnectionStatus, PluginInterface } from '#root/plugins'
 
 //==============================================================================
 
-import { bgRdfStatements } from './bgrdf'
+import './bgrdf'    // Run set up code
+import { BGF_ONTOLOGY_URI, bgRdfStatements } from './bgrdf'
 
 import {
     BONDGRAPH_COMPONENT_DEFINITIONS,
@@ -93,8 +94,6 @@ import { DomainGraph } from './domainGraph'
 //==============================================================================
 
 export const PLUGIN_ID = 'bondgraph-components'
-
-const BONDGRAPH_FRAMEWORK = 'https://bg-rdf.org/ontologies/bondgraph-framework'
 
 //==============================================================================
 //==============================================================================
@@ -295,7 +294,7 @@ export class BondgraphPlugin implements PluginInterface {
     #componentTemplates: Map<string, BGLibraryComponentTemplate> = new Map()
     #currentDocumentUri: string = ''
     #physicalDomains: Map<string, PhysicalDomain> = new Map()
-    #rdfStore: MetadataStore = new MetadataStore()
+    #rdfStore: $rdf.RdfStore = new $rdf.RdfStore()
     #transformNodeType = BGF.uri('TransformNode').value
 
     constructor() {
@@ -377,7 +376,7 @@ export class BondgraphPlugin implements PluginInterface {
 
         // Add a copy of the BG-RDF framework as a **named graph**, to use when
         // finding BondElements and JunctionStructures
-        const bgfGraph = $rdf.namedNode(BONDGRAPH_FRAMEWORK)
+        const bgfGraph = $rdf.namedNode(BGF_ONTOLOGY_URI)
         for (const statement of this.#rdfStore.statements()) {
             rdfStore.add(statement.subject, statement.predicate, statement.object, bgfGraph)
         }

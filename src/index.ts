@@ -43,6 +43,8 @@ export type {
     Theme
 } from '#root/components/WrappedEditor.vue'
 
+export { bgRdfStatements } from '#root/plugins/bondgraph/bgrdf'
+
 export { editorInitialised } from '#root/utils'
 
 export { version } from '../package.json'
