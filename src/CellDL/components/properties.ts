@@ -24,47 +24,20 @@ import { DCT, RDFS, type Term } from '@celldl/rdf'
 
 //==============================================================================
 
-import type * as locApi from '#root/libopencor/locUIJsonApi'
-
 import type { CellDLObject } from '#editor/celldlObjects'
 import type { NamedProperty } from '#editor/components'
 
-import type { IPathStyle } from '#root/utils/svgUtils'
 import { componentLibraryPlugin } from '#root/plugins'
+import {
+    type ComponentProperties,
+    type ItemDetails,
+    PANEL_ID,
+    type PropertyGroup,
+    type StyleObject,
+    type ValueChange
+} from '#root/utils/editor-types'
 
 //==============================================================================
-
-export type ItemDetails = locApi.IUiJsonInput & {
-    itemId: string
-    property: string
-    value?: string|number
-    possibleValues?: locApi.IUiJsonDiscreteInputPossibleValue[]
-    units?: string
-    optional?: boolean
-    numeric?: boolean
-}
-
-export type StyleObject = {
-    fillColours?: string[]
-    pathStyle?: IPathStyle
-}
-
-export interface PropertyGroup {
-    groupId: string
-    items: ItemDetails[]
-    styling?: StyleObject
-    title: string
-}
-
-export type StylingGroup = PropertyGroup & {
-    styling: StyleObject
-}
-
-export interface ValueChange {
-    oldValue: string
-    newValue: string
-}
-
 //==============================================================================
 
 export const METADATA_GROUP_ID = 'cd-metadata'

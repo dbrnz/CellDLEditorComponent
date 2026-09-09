@@ -47,11 +47,11 @@ import type {
     ObjectTemplate,
 } from '#editor/components'
 import type {
+    PANEL_ID,
     PropertyGroup,
     StyleObject,
     ValueChange
-} from '#editor/components/properties'
-import { STYLING_GROUP } from '#editor/components/properties'
+} from '#root/utils/editor-types'
 
 //==============================================================================
 

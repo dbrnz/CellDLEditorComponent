@@ -59,7 +59,7 @@ import { DEFAULT_EDITOR_TOOL_ID, EDITOR_TOOL_IDS, PANEL_IDS } from '#editor/edit
 import { editGuides } from '#editor/editor/editguides'
 import { undoRedo } from '#editor/diagram/undoredo'
 
-import type { EditorToolButton } from '#root/utils/EditorState'
+import { type EditorToolButton, PANEL_ID } from '#root/utils/editor-types'
 import EditorToolbar from '#root/components/toolbar/EditorToolbar.vue'
 
 import type { PopoverEventData } from '#root/components/popovers/types'
@@ -71,7 +71,7 @@ import PropertiesPanel from '#root/components/panels/PropertiesPanel.vue'
 import { componentLibraryPlugin } from '#root/plugins'
 import { BondgraphPlugin } from '#root/plugins/bondgraph'
 // WIP import { ElectricalPlugin } from '#root/plugins/electrical'
-import type { ViewState } from '#root/utils/EditorState'
+import type { ComponentProperties, ViewState } from '#root/utils/editor-types'
 
 import { TestCellDLEditor, testEditor } from '../../tests/editor'
 

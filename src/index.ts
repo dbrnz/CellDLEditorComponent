@@ -29,7 +29,7 @@ export {
     EditorStatus,
     type FileStatus,
     type ViewState
-} from '#root/utils/EditorState'
+} from '#root/utils/editor-types'
 
 export type {
     CellDLEditorCommand,

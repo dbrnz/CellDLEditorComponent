@@ -29,7 +29,7 @@ useThemeCssVariables('toolbar')
 
 //==============================================================================
 
-import type { EditorToolButton } from '#root/utils/EditorState'
+import type { EditorToolButton } from '#root/utils/editor-types'
 import type { PopoverEventData } from '#root/components/popovers/types'
 
 import ToolButton from './ToolButton.vue'

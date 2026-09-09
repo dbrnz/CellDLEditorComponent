@@ -22,6 +22,54 @@ import type * as vue from 'vue'
 
 //==============================================================================
 
+import type * as locApi from '#root/libopencor/locUIJsonApi'
+import type { IPathStyle } from './svgUtils'
+
+//==============================================================================
+
+export enum PANEL_ID {
+    METADATA_PANEL = 'metadata-property-panel',
+    PROPERTIES_PANEL = 'properties-property-panel',
+    STYLE_PANEL = 'style-property-panel'
+}
+
+//==============================================================================
+
+export type ItemDetails = locApi.IUiJsonInput & {
+    itemId: string
+    property: string
+    value?: string|number
+    possibleValues?: locApi.IUiJsonDiscreteInputPossibleValue[]
+    units?: string
+    optional?: boolean
+    numeric?: boolean
+}
+
+export type StyleObject = {
+    fillColours?: string[]
+    pathStyle?: IPathStyle
+}
+
+export interface PropertyGroup {
+    groupId: string
+    items: ItemDetails[]
+    styling?: StyleObject
+    title?: string
+}
+
+export interface ValueChange {
+    oldValue: string
+    newValue: string
+}
+
+//==============================================================================
+
+export type ComponentProperties = {
+    groups: PropertyGroup[]
+}
+
+//==============================================================================
+
 export type EditorState = {
     msg?: string
     state: string
@@ -68,11 +116,12 @@ export class EditorStatus {
 
 export type EditorToolButton = {
     toolId: string
-    active?: boolean
     prompt: string
+    active?: boolean
     icon?: string
     image?: string
     panel?: vue.Raw<vue.Component>
+    props?: vue.Ref<PropertyGroup[]>
 }
 
 //==============================================================================

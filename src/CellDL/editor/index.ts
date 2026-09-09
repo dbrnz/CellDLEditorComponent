@@ -34,6 +34,7 @@ import { type MoveUndoState, undoRedo } from '#editor/diagram/undoredo'
 import { round } from '#editor/utils'
 
 import { isMacOs } from '#root/utils/common'
+import { type ComponentProperties, PANEL_ID } from '#root/utils/editor-types'
 import { type Point, type PointLike, PointMath } from '#root/utils/points'
 import type { StringProperties } from '#root/utils/types'
 import { componentLibraryPlugin } from '#root/plugins'
@@ -81,12 +82,6 @@ const TOOL_TO_STATE: Map<EDITOR_TOOL_IDS, EDITOR_STATE> = new Map([
 ])
 
 const DEFAULT_EDITOR_STATE = TOOL_TO_STATE.get(DEFAULT_EDITOR_TOOL_ID)!
-
-//==============================================================================
-
-export enum PANEL_IDS {
-    PropertyPanel = 'property-panel'
-}
 
 //==============================================================================
 

@@ -58,7 +58,7 @@ useThemeCssVariables('accordioncontent')
 useThemeCssVariables('accordioncontent')
 useThemeCssVariables('accordionpanel')
 
-import type { PropertyGroup, StylingGroup } from '#editor/components/properties'
+import type { ComponentProperties, PropertyGroup } from '#root/utils/editor-types'
 
 import ToolPanel from '../toolbar/ToolPanel.vue'
 import InputWidget from '../widgets/InputWidget.vue'

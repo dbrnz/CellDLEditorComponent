@@ -43,6 +43,13 @@ import type {
 } from '#root/libopencor/locUIJsonApi'
 
 import {
+    type ItemDetails,
+    PANEL_ID,
+    type PropertyGroup,
+    type StyleObject,
+    type ValueChange
+} from '#root/utils/editor-types'
+import {
     getSvgFillStyle,
     getSvgPathStyle,
     setSvgPathStyle,
@@ -62,12 +69,7 @@ import type {
 } from '#editor/components'
 import {
     getItemProperty,
-    type ItemDetails,
-    type PropertyGroup,
-    type StyleObject,
-    STYLING_GROUP_ID,
     updateItemProperty,
-    type ValueChange
 } from '#editor/components/properties'
 
 import type { ConnectionStatus, PluginInterface } from '#root/plugins'
