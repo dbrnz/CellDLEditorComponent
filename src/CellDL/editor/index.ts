@@ -27,7 +27,7 @@ import '#root/assets/svgContent.css'
 import type { CellDLObject } from '#editor/celldlObjects'
 import { PathMaker, type PathNode } from '#editor/connections/pathmaker'
 import type { TemplateEventDetails } from '#editor/components'
-import { ObjectPropertiesPanel } from '#editor/components/properties'
+import { objectMetadataTemplate, ObjectPropertiesPanel } from '#editor/components/properties'
 import type { CellDLDiagram } from '#editor/diagram'
 import { SelectionSet } from '#editor/diagram/selectionset'
 import { type MoveUndoState, undoRedo } from '#editor/diagram/undoredo'
@@ -161,8 +161,25 @@ export class CellDLEditor {
 
     #pointerDownTime: number = 0
 
-    #openPanelId: PANEL_IDS | null = null
-    #propertiesPanel: ObjectPropertiesPanel = new ObjectPropertiesPanel()
+    #openPanel: ObjectPropertiesPanel | undefined = undefined
+    #panels: Map<PANEL_ID, ObjectPropertiesPanel> = new Map([
+        [
+            PANEL_ID.METADATA_PANEL, new ObjectPropertiesPanel(PANEL_ID.METADATA_PANEL, [
+                ...objectMetadataTemplate(),
+                ...componentLibraryPlugin.getPanelTemplates(PANEL_ID.METADATA_PANEL)
+            ])
+        ],
+        [
+            PANEL_ID.PROPERTIES_PANEL, new ObjectPropertiesPanel(PANEL_ID.PROPERTIES_PANEL,
+                componentLibraryPlugin.getPanelTemplates(PANEL_ID.PROPERTIES_PANEL)
+            )
+        ],
+        [
+            PANEL_ID.STYLE_PANEL, new ObjectPropertiesPanel(PANEL_ID.STYLE_PANEL,
+                componentLibraryPlugin.getPanelTemplates(PANEL_ID.STYLE_PANEL)
+            )
+        ]
+    ])
 
     #tooltip: vue.Ref|undefined
     #tooltipElement: HTMLElement|undefined
@@ -338,7 +355,9 @@ export class CellDLEditor {
         this.pointerMoved = false
         this.#activeObjects.clear()
         this.selectionSet.clear()
-        this.#propertiesPanel.clearObjectProperties()
+        for (const panel of this.#panels.values()) {
+            panel.clearObjectProperties()
+        }
     }
 
     closeDiagram() {
@@ -382,8 +401,8 @@ export class CellDLEditor {
     #toolBarEvent(event: Event) {
         const detail = (<CustomEvent>event).detail
         if (detail.type === 'state') {
-            if (Object.values(PANEL_IDS).includes(detail.source)) {
-                this.#openPanelId = detail.value ? detail.source : null
+            if (this.#panels.has(detail.source)) {
+                this.#openPanel = this.#panels.get(detail.source)
             } else if (detail.value && TOOL_TO_STATE.has(detail.source as EDITOR_TOOL_IDS)) {
                 this.editorState = TOOL_TO_STATE.get(detail.source as EDITOR_TOOL_IDS)!
                 this.#setDefaultCursor()
@@ -408,11 +427,11 @@ export class CellDLEditor {
 
     async #panelEvent(event: Event) {
         const detail = (<CustomEvent>event).detail
-        if (detail.source === this.#openPanelId) {
-            if (this.selectionSet.size === 1 && this.#openPanelId === PANEL_IDS.PropertyPanel) {
+        if (detail.source === this.#openPanel?.panelId) {
+            if (this.#openPanel && this.selectionSet.size === 1) {
                 const values = detail.value
                 if (values.oldValue !== values.newValue) {
-                    await this.#propertiesPanel.updateObjectProperties(this.selectionSet.objects[0]!, detail.itemId, detail.value)
+                    await this.#openPanel.updateObjectProperties(this.selectionSet.objects[0]!, detail.itemId, detail.value)
                     notifyChanges()
                 }
             }
@@ -421,9 +440,9 @@ export class CellDLEditor {
 
     async #styleEvent(event: Event) {
         const detail = (<CustomEvent>event).detail
-        if (detail.source === this.#openPanelId) {
-            if (this.selectionSet.size === 1 && this.#openPanelId === PANEL_IDS.PropertyPanel) {
-                await this.#propertiesPanel.updateObjectStyling(this.selectionSet.objects[0]!, detail.object, detail.styling)
+        if (detail.source === this.#openPanel?.panelId) {
+            if (this.#openPanel && this.selectionSet.size === 1) {
+                await this.#openPanel.updateObjectStyling(this.selectionSet.objects[0]!, detail.object, detail.styling)
                 notifyChanges()
             }
         }
@@ -550,7 +569,9 @@ export class CellDLEditor {
 
     protected setSelectedObject(selectedObject: CellDLObject) {
         if (this.selectionSet.select(selectedObject)) {
-            this.#propertiesPanel.setObjectProperties(selectedObject)
+            for (const panel of this.#panels.values()) {
+                panel.setObjectProperties(selectedObject)
+            }
             this.enableContextMenuItem(CONTEXT_MENU.DELETE, true)
             this.enableContextMenuItem(CONTEXT_MENU.INFO, true)
         }
@@ -558,7 +579,9 @@ export class CellDLEditor {
 
     #unsetSelectedObject(selectedObject: CellDLObject|null) {
         if (selectedObject && this.selectionSet.unselect(selectedObject)) {
-            this.#propertiesPanel.setObjectProperties(null)
+            for (const panel of this.#panels.values()) {
+                panel.setObjectProperties(null)
+            }
             this.enableContextMenuItem(CONTEXT_MENU.DELETE, false)
             this.enableContextMenuItem(CONTEXT_MENU.INFO, false)
         }

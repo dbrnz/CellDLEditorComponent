@@ -22,7 +22,8 @@
 </template>
 
 <script setup lang="ts">
-import type * as vue from 'vue'
+import * as vue from 'vue'
+
 import { useThemeCssVariables } from '#root/utils/themeCssVariables'
 
 useThemeCssVariables('toolbar')

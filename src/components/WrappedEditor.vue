@@ -16,12 +16,12 @@
                 :class="{ hidden: !panelVisible }"
             )
                 component(
-                        v-if="panelComponent"
-                        :is="panelComponent"
-                        :toolId="panelToolId"
-                        @panel-event="panelEvent"
-                        @style-event="styleEvent"
-                    )
+                    v-if="panelComponent"
+                    :is="panelComponent"
+                    :toolId="panelToolId"
+                    @panel-event="panelEvent"
+                )
+                // @style-event="styleEvent"
             EditorToolbar.editor-bar(
                 :buttons="panelButtons"
                 type="panel"
@@ -55,7 +55,7 @@ import { DEFAULT_CONNECTION_STYLE_DEFINITION } from '#editor/connections'
 import { CellDLDiagram } from '#editor/diagram'
 
 import { CellDLEditor } from '#editor/editor'
-import { DEFAULT_EDITOR_TOOL_ID, EDITOR_TOOL_IDS, PANEL_IDS } from '#editor/editor'
+import { DEFAULT_EDITOR_TOOL_ID, EDITOR_TOOL_IDS } from '#editor/editor'
 import { editGuides } from '#editor/editor/editguides'
 import { undoRedo } from '#editor/diagram/undoredo'
 
@@ -284,7 +284,7 @@ const panelComponent = vue.ref<vue.Raw<vue.Component>>()
 const panelVisible = vue.ref<boolean>()
 panelVisible.value = false
 
-const panelToolId = vue.ref<string>()
+const panelToolId = vue.ref<PANEL_ID>()
 
 //==============================================================================
 
@@ -303,7 +303,7 @@ function resetToolBars() {
 
 //==============================================================================
 
-function buttonEvent(toolId: string, active: boolean, newComponent: vue.Raw<vue.Component> | null) {
+function buttonEvent(toolId: PANEL_ID, active: boolean, newComponent: vue.Raw<vue.Component> | null) {
     if (newComponent) {
         // Update the RH panel to show its current component
 

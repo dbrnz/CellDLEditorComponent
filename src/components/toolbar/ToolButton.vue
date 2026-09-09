@@ -26,12 +26,14 @@
 import * as vue from 'vue'
 import * as LucideIcons from '@lucide/vue'
 
+import type { PropertyGroup } from '#root/utils/editor-types'
+
 const props = defineProps<{
-    toolId?: string
+    toolId: string
     active?: boolean
+    prompt: string
     icon?: string
     image?: string
-    prompt?: string
     modal?: boolean
     type?: string
     panel?: vue.Raw<vue.Component>

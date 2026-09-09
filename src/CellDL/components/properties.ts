@@ -40,9 +40,9 @@ import {
 //==============================================================================
 //==============================================================================
 
-export const METADATA_GROUP_ID = 'cd-metadata'
+const OBJECT_METADATA_GROUP = 'object-metadata'
 
-function OBJECT_METADATA(): NamedProperty[] {
+function objectMetadata(): NamedProperty[] {
     return [
         {
             name: 'Label',
@@ -55,11 +55,12 @@ function OBJECT_METADATA(): NamedProperty[] {
     ]
 }
 
-function METADATA_GROUP(): PropertyGroup {
-    return {
-        groupId: METADATA_GROUP_ID,
-        title: 'Metadata',
-        items: OBJECT_METADATA().map((nameUri: NamedProperty) => {
+// This would be extended by an annotation plugin...
+
+export function objectMetadataTemplate(): PropertyGroup[] {
+    return [{
+        groupId: OBJECT_METADATA_GROUP,
+        items: objectMetadata().map((nameUri: NamedProperty) => {
             return {
                 itemId: nameUri.property,
                 property: nameUri.property,
@@ -67,18 +68,7 @@ function METADATA_GROUP(): PropertyGroup {
                 defaultValue: ''
             }
         })
-    }
-}
-
-//==============================================================================
-
-export const STYLING_GROUP_ID = 'object-styling'
-
-export const STYLING_GROUP: PropertyGroup = {
-    groupId: STYLING_GROUP_ID,
-    title: 'Style',
-    items: [],
-    styling: {}
+    }]
 }
 
 //==============================================================================
@@ -112,12 +102,10 @@ export function getItemProperty(celldlObject: CellDLObject,
         const valueUnits = value.split(' ')
         return {
             ...itemTemplate,
-            // @ts-expect-error
             value:  Number(valueUnits[0]),
             units: valueUnits[1]
         }
     }
-    // @ts-expect-error
     return {
         ...itemTemplate,
         value: value
@@ -152,35 +140,33 @@ export function updateItemProperty(property: string, value: ValueChange,
 //==============================================================================
 
 export class ObjectPropertiesPanel {
-    #componentProperties = vue.ref<PropertyGroup[]>([])
-    #propertyGroups: PropertyGroup[]
-    #metadataIndex: number = -1
+    #groupTemplate: PropertyGroup[]
+    #componentPropertiesRef = vue.ref<ComponentProperties>({
+        groups: []
+    })
+    #panelId: PANEL_ID
 
-    constructor() {
-        this.#propertyGroups = [
-            ...componentLibraryPlugin.getPropertyGroups(),
-            METADATA_GROUP(),
-            componentLibraryPlugin.getStylingGroup()
-        ]
-        this.#propertyGroups.forEach((group, index) => {
-            if (group.groupId === METADATA_GROUP_ID) {
-                this.#metadataIndex = index
-            }
-        })
-        this.#componentProperties.value = structuredClone(this.#propertyGroups)
-        for (const group of this.#componentProperties.value) {
+    constructor(panelId: PANEL_ID, groupTemplate: PropertyGroup[]) {
+        this.#panelId = panelId
+        this.#groupTemplate = groupTemplate
+        this.#componentPropertiesRef.value = {
+            groups: structuredClone(this.#groupTemplate)
+        }
+        for (const group of this.#componentPropertiesRef.value.groups) {
             group.items = []
         }
-        // Make data available to the properties panel
+        vue.provide<vue.Ref<ComponentProperties>>(`${panelId}-componentProperties`, this.#componentPropertiesRef)
+    }
 
-        vue.provide<vue.Ref<PropertyGroup[]>>('componentProperties', this.#componentProperties)
+    get panelId() {
+        return this.#panelId
     }
 
     //==================================
 
     clearObjectProperties() {
         // Clear each group's list of items
-        for (const group of this.#componentProperties.value) {
+        for (const group of this.#componentPropertiesRef.value.groups) {
             group.items = []
             if (group.styling) {
                 group.styling = {}
@@ -191,22 +177,25 @@ export class ObjectPropertiesPanel {
     setObjectProperties(celldlObject: CellDLObject|null) {
         this.clearObjectProperties()
         if (celldlObject) {
-            // Update component properties with plugin specific values
-
-            componentLibraryPlugin.loadComponentProperties(celldlObject, this.#componentProperties.value)
-
-            if (this.#metadataIndex >= 0) {
-                // Update component properties in the METADATA_GROUP
-
-                // biome-ignore lint/style/noNonNullAssertion: `metadataIndex` is in range
-                const group = this.#componentProperties.value[this.#metadataIndex]!
-                METADATA_GROUP().items.forEach((itemTemplate: ItemDetails) => {
-                    const item = getItemProperty(celldlObject, itemTemplate)
-                    if (item) {
-                        group.items.push(item)
+            if (this.#panelId === PANEL_ID.METADATA_PANEL) {
+                // First get generic metadata
+                for (const group of this.#componentPropertiesRef.value.groups) {
+                    if (group.groupId === OBJECT_METADATA_GROUP) {
+                        group.items.forEach((itemTemplate: ItemDetails) => {
+                            const item = getItemProperty(celldlObject, itemTemplate)
+                            if (item) {
+                                group.items.push(item)
+                            }
+                        })
                     }
-                })
+                }
             }
+            // Get plugin specific component properties
+
+            componentLibraryPlugin.loadComponentProperties(this.#panelId, celldlObject,
+                                                           this.#componentPropertiesRef.value.groups)
+
+console.log('s obj p', celldlObject.id, this.#panelId, this.#componentPropertiesRef.value)
         }
     }
 
@@ -215,21 +204,23 @@ export class ObjectPropertiesPanel {
     async updateObjectProperties(celldlObject: CellDLObject|null,
                                  itemId: string, value: ValueChange) {
         if (celldlObject) {
-            // Save plugin specific component properties
-
-            await componentLibraryPlugin.updateObjectProperties(celldlObject, itemId, value,
-                                                             this.#componentProperties.value)
-
-            // Save component properties in the METADATA_GROUP
-
-            // biome-ignore lint/style/noNonNullAssertion: `metadataIndex` is in range
-            const metadataGroup = this.#propertyGroups[this.#metadataIndex]!
-            for (const itemTemplate of metadataGroup.items) {
-                if (itemId === itemTemplate.itemId) {
-                    updateItemProperty(itemTemplate.property, value, celldlObject)
-                    break
+            if (this.#panelId === PANEL_ID.METADATA_PANEL) {
+                // First update generic metadata
+                for (const group of this.#componentPropertiesRef.value.groups) {
+                    if (group.groupId === OBJECT_METADATA_GROUP) {
+                        for (const itemTemplate of group.items) {
+                            if (itemId === itemTemplate.itemId) {
+                                updateItemProperty(itemTemplate.property, value, celldlObject)
+                                break
+                            }
+                        }
+                    }
                 }
             }
+            // Update plugin specific component properties
+
+            await componentLibraryPlugin.updateObjectProperties(celldlObject, itemId, value,
+                                                                this.#componentPropertiesRef.value.groups)
         }
     }
 

@@ -4,51 +4,37 @@
             div(
                 v-if="disabled"
             ) Please select an element or path.
-            Accordion(
+            .group(
+                v-for="group in groups"
                 v-if="!disabled"
-                v-model:value="openPanel"
             )
-                AccordionPanel.group(
-                    v-for="(group, groupIndex) in groups"
-                    :key="group.title"
-                    :disabled="disabled"
-                    :value="String(groupIndex)"
+               InputWidget(
+                    v-if="group.objectType === 'items'"
+                    v-for="item in group.items"
+                    v-model="item.value"
+                    :itemId="item.itemId"
+                    :name="item.name"
+                    :value="item.value"
+                    :units="item.units"
+                    :numeric="item.numeric"
+                    :maximumValue="item.maximumValue"
+                    :minimumValue="item.minimumValue"
+                    :possibleValues="item.possibleValues"
+                    :stepValue="item.stepValue"
+                    @change="updateProperties"
                 )
-                    AccordionHeader(
-                        v-if="hasContent[groupIndex]"
-                    ) {{ group.title }}
-                    AccordionContent(
-                        v-if="hasContent[groupIndex] && groupIndex < (groups.length - 1)"
-                    )
-                        InputWidget(
-                            v-for="(item, index) in group.items"
-                            v-model="item.value"
-                            :itemId="item.itemId"
-                            :name="item.name"
-                            :value="item.value"
-                            :units="item.units"
-                            :numeric="item.numeric"
-                            :maximumValue="item.maximumValue"
-                            :minimumValue="item.minimumValue"
-                            :possibleValues="item.possibleValues"
-                            :stepValue="item.stepValue"
-                            @change="updateProperties"
-                        )
-                    AccordionContent(
-                        v-if="hasContent[groupIndex] && groupIndex == (groups.length - 1)"
-                    )
-                        FillStyle(
-                            v-if="objectType === 'node'"
-                            :fillStyle="objectStyle"
-                            @change="updateNodeStyle"
-                        )
-                        PathStyle(
-                            v-if="objectType === 'path'"
-                            :pathStyle="objectStyle"
-                            @change="updatePathStyle"
-                        )
-</template>
+                FillStyle(
+                    v-if="group.objectType === 'node'"
+                    :fillStyle="group.objectStyle"
+                    @change="updateNodeStyle"
+                )
+                PathStyle(
+                    v-if="group.objectType === 'path'"
+                    :pathStyle="group.objectStyle"
+                    @change="updatePathStyle"
+                )
 
+</template>
 <script setup lang="ts">
 import * as vue from 'vue'
 import { useThemeCssVariables } from '#root/utils/themeCssVariables'
@@ -72,25 +58,23 @@ import type {
     IPathStyle
 } from '#root/utils/svgUtils'
 
+type ExpandedPropertyGroup = PropertyGroup & {
+    objectType: string
+    objectStyle?: INodeStyle|IPathStyle
+}
+
 const props = defineProps<{
     toolId: string
 }>()
 
-const groups = vue.inject<vue.Ref<PropertyGroup[]>>('componentProperties')
+const properties = vue.inject<vue.Ref<ComponentProperties>>(`${props.toolId}-componentProperties`)
 
-// Remember last opened AccordionPanel
 
-const openPanel = vue.ref<string>('')
 
 const disabled = vue.computed<boolean>(() => {
-    if (groups) {
-        for (const group of groups.value) {
-            if (group.items.length
-             || (group.styling
-              && 'fillColours' in group.styling
-              && group.styling.fillColours
-              && Array.isArray(group.styling.fillColours)
-              && group.styling.fillColours.length)) {
+    if (properties) {
+        for (const group of properties.value.groups) {
+            if (group.items.length > 0 || group.styling) {
                 return false
             }
         }
@@ -98,59 +82,49 @@ const disabled = vue.computed<boolean>(() => {
     return true
 })
 
-const hasContent = vue.computed<boolean[]>(() => {
-    if (groups) {
-        return groups?.value.map((group: PropertyGroup) => {
-            return (group.items.length > 0
-                 || (group.styling !== undefined && 'fillColours' in group.styling
-                                                 && group.styling.fillColours !== undefined
-                                                 && Array.isArray(group.styling.fillColours)
-                                                 && group.styling.fillColours.length > 0)
-                 || (group.styling !== undefined && 'pathStyle' in group.styling)
-            )
-        })
-    } else {
-        return []
-    }
-})
-
-const objectStyle = vue.computed<INodeStyle|IPathStyle|undefined>(() => {
-    const stylingGroup: StylingGroup = groups?.value.at(-1) as StylingGroup
-    if ('fillColours' in stylingGroup.styling) {
-        const fillColours: string[] = [...(stylingGroup.styling.fillColours || [])]
-        let direction = 'H'
-        const colours: string[] = []
-        // biome-ignore lint/style/noNonNullAssertion: fillColours is at least 1 long
-        if (fillColours.length && ['H', 'V'].includes(fillColours[0]!)) {
-            // @ts-expect-error
-            direction = fillColours.shift()
-        }
-        if (fillColours.length === 1) {
-            // biome-ignore lint/style/noNonNullAssertion: fillColours is 1 long
-            colours.push(fillColours[0]!.trim())
-        } else if (fillColours.length) {
-            fillColours.forEach(colour => {
-                colours.push(colour.trim())
+const groups = vue.computed<ExpandedPropertyGroup[]>(() => {
+    const groups: ExpandedPropertyGroup[] = []
+    if (properties?.value.groups) {
+        for (const group of properties.value.groups) {
+            const styling = group.styling || {}
+            const objectType = 'fillColours' in styling ? 'node'
+                             : 'pathStyle' in styling ? 'path'
+                             : group.items.length > 0 ? 'items'
+                             : 'none'
+            let objectStyle: INodeStyle|IPathStyle|undefined
+            if ('fillColours' in styling) {
+                const fillColours: string[] = [...(styling.fillColours || [])]
+                let direction = 'H'
+                const colours: string[] = []
+                // biome-ignore lint/style/noNonNullAssertion: fillColours is at least 1 long
+                if (fillColours.length && ['H', 'V'].includes(fillColours[0]!)) {
+                    // @ts-expect-error
+                    direction = fillColours.shift()
+                }
+                if (fillColours.length === 1) {
+                    // biome-ignore lint/style/noNonNullAssertion: fillColours is 1 long
+                    colours.push(fillColours[0]!.trim())
+                } else if (fillColours.length) {
+                    fillColours.forEach(colour => {
+                        colours.push(colour.trim())
+                    })
+                }
+                objectStyle = {
+                    gradientFill: colours.length > 1,
+                    colours,
+                    direction
+                } as INodeStyle
+            } else if ('pathStyle' in styling) {
+                objectStyle = styling.pathStyle
+            }
+            groups.push({
+                ...group,
+                objectType,
+                objectStyle
             })
         }
-        return {
-            gradientFill: colours.length > 1,
-            colours,
-            direction
-        } as INodeStyle
-    } else if ('pathStyle' in stylingGroup.styling) {
-        return stylingGroup.styling.pathStyle
     }
-})
-
-const objectType = vue.computed<string>(() => {
-    const stylingGroup: StylingGroup = groups?.value.at(-1) as StylingGroup
-    if ('fillColours' in stylingGroup.styling) {
-        return 'node'
-    } else if ('pathStyle' in stylingGroup.styling) {
-        return 'path'
-    }
-    return ''
+    return groups
 })
 
 const emit = defineEmits(['panel-event', 'style-event'])

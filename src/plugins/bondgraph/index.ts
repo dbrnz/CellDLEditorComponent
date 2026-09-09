@@ -201,77 +201,70 @@ interface PluginData {
 
 //==============================================================================
 
-enum BG_INPUT {
+const ELEMENT_PROPERTIES_GROUP_ID = 'bg-element-properties'
+const STYLE_PROPERTIES_GROUP_ID = 'bg-element-style'
+
+enum BG_PROPERTIES_ITEM {
     ElementType = 'bg-element-type',
     ElementSpecies = 'bg-species',
     ElementLocation = 'bg-location',
     ElementValue = 'bg-element-value'
 }
 
-enum BG_GROUP {
-    ElementGroup = 'bg-element-group',
-    ParameterGroup = 'bg-parameter-group',
-    VariableGroup = 'bg-variable-group'
+function elementPropertiesTemplate(): PropertyGroup {
+    return {
+        groupId: ELEMENT_PROPERTIES_GROUP_ID,
+        title: 'Element',
+        items: [
+            {
+                itemId: BG_PROPERTIES_ITEM.ElementType,
+                property: $rdf.RDF.uri('type').value,
+                name: 'Bond Element',
+                possibleValues: [],
+                optional: true
+            },
+            {
+                itemId: BG_PROPERTIES_ITEM.ElementSpecies,
+                property: BGF.uri('hasSpecies').value,
+                name: 'Species',
+                defaultValue: ''
+            },
+            {
+                itemId: BG_PROPERTIES_ITEM.ElementLocation,
+                property: BGF.uri('hasLocation').value,
+                name: 'Location',
+                defaultValue: ''
+            }
+        ]
+    }
 }
 
-function PROPERTY_GROUPS(): PropertyGroup[] {
-    return [
-        {
-            groupId: BG_GROUP.ElementGroup,
-            title: 'Element',
-            items: [
-                {
-                    itemId: BG_INPUT.ElementType,
-                    property: $rdf.RDF.uri('type').value,
-                    name: 'Bond Element',
-                    possibleValues: [],
-                    optional: true
-                },
-                {
-                    itemId: BG_INPUT.ElementSpecies,
-                    property: BGF.uri('hasSpecies').value,
-                    name: 'Species',
-                    defaultValue: ''
-                },
-                {
-                    itemId: BG_INPUT.ElementLocation,
-                    property: BGF.uri('hasLocation').value,
-                    name: 'Location',
-                    defaultValue: ''
-                },
-                // @ts-expect-error:
-                {
-                    itemId: BG_INPUT.ElementValue,
-                    property: BGF.uri('hasValue').value,
-                    name: 'Initial value',
-                    defaultValue: 0,
-                    numeric: true,
-                    optional: true
-                }
-            ]
-        },
-        {
-            groupId: BG_GROUP.ParameterGroup,
-            title: 'Parameters',
-            items: []
-        },
-        {
-            groupId: BG_GROUP.VariableGroup,
-            title: 'Variables',
-            items: []
-        }
-    ]
+function elementValueItem(): ItemDetails {
+    return {
+        itemId: BG_PROPERTIES_ITEM.ElementValue,
+        property: BGF.uri('hasValue').value,
+        name: 'Initial value',
+        defaultValue: 0,
+        numeric: true,
+        optional: true
+    } as ItemDetails
 }
 
-const ELEMENT_GROUP_INDEX = 0
-const PARAMS_GROUP_INDEX = 1
-const VARS_GROUP_INDEX = 2
-
-// Within ELEMENT_GROUP
+// Within ELEMENT_PROPERTIES
 const ELEMENT_TYPE_INDEX = 0
-const ELEMENT_VALUE_INDEX = 3
+//const ELEMENT_VALUE_INDEX = 3
 
 //==============================================================================
+
+const BG_STYLING_TEMPLATE: PropertyGroup = {
+    groupId: STYLE_PROPERTIES_GROUP_ID,
+    items: [],
+    styling: {}
+}
+
+//==============================================================================
+
+
 
 const DEFAULT_TRANSFORM_RATIO = 1
 const TRANSFORM_NODE_PROMPT = 'Ratio'
@@ -286,8 +279,7 @@ export class BondgraphPlugin implements PluginInterface {
     #baseComponentToElementTemplates: Map<string, ElementTemplate[]> = new Map()    // Indexed by component.type
     #domainGraph: DomainGraph = new DomainGraph(undefined)
     #elementTemplates: Map<string, ElementTemplate> = new Map()                     // Indexed by element.type
-    #propertyGroups: PropertyGroup[]
-
+    #elementPropertiesTemplate: PropertyGroup
     #componentLibrary: BGComponentLibrary = {
         id: this.id,
         name: 'Bondgraph',
@@ -300,7 +292,7 @@ export class BondgraphPlugin implements PluginInterface {
     #transformNodeType = BGF.uri('TransformNode').value
 
     constructor() {
-        this.#propertyGroups = PROPERTY_GROUPS()
+        this.#elementPropertiesTemplate = elementPropertiesTemplate()
         this.#rdfStore.addStatements(bgRdfStatements())
         this.#initialiseComponentLibrary()
         this.#loadDomains()
@@ -323,6 +315,16 @@ export class BondgraphPlugin implements PluginInterface {
             return this.#baseComponents.get(type)!.name || ''
         }
         return ''
+    }
+
+    getPanelTemplates(panelId: PANEL_ID): PropertyGroup[]
+    {
+        if (panelId === PANEL_ID.PROPERTIES_PANEL) {
+            return [this.#elementPropertiesTemplate]
+        } else if (panelId === PANEL_ID.STYLE_PANEL) {
+            return [BG_STYLING_TEMPLATE]
+        }
+        return []
     }
 
     getTemplateName(rdfType: string): string|undefined {
@@ -362,10 +364,6 @@ export class BondgraphPlugin implements PluginInterface {
                 name: this.#getName(componentTemplate.type)
             }
         }
-    }
-
-    getPropertyGroups(): PropertyGroup[] {
-        return this.#propertyGroups
     }
 
     //==========================================================================
@@ -594,76 +592,100 @@ export class BondgraphPlugin implements PluginInterface {
 
     //==========================================================================
 
-    loadComponentProperties(celldlObject: CellDLObject, componentProperties: PropertyGroup[]) {
+    loadComponentProperties(panelId: PANEL_ID, celldlObject: CellDLObject, componentProperties: PropertyGroup[]) {
         alert.clear()
-        if (celldlObject.isConnection) {
+        if (panelId === PANEL_ID.PROPERTIES_PANEL) {
+            if (!celldlObject.isConnection) {
+                componentProperties.forEach(componentGroup => {
+                    this.#loadElementProperties(celldlObject, componentGroup)
+                })
+            }
+        } else if (panelId === PANEL_ID.STYLE_PANEL) {
             componentProperties.forEach(group => {
-                if (group.groupId === STYLING_GROUP_ID) {
-                    this.#loadElementStyling(celldlObject, group, true)
-                }
-            })
-        } else {
-            const pluginData = (<PluginData>celldlObject.pluginData(this.id))
-            componentProperties.forEach(group => {
-                if (group.groupId === BG_GROUP.ElementGroup) {
-                    this.#loadElementProperties(celldlObject, group)
-                } else if (pluginData.elementTemplate) {
-                    if (group.groupId === BG_GROUP.ParameterGroup) {
-                        this.#setVariableTemplates(pluginData.elementTemplate.parameters, group)
-                        this.#loadVariableProperties(celldlObject, group)
-                    } else if (group.groupId === BG_GROUP.VariableGroup) {
-                        this.#setVariableTemplates(pluginData.elementTemplate.variables, group)
-                        this.#loadVariableProperties(celldlObject, group)
-                    }
-                } else if (group.groupId === STYLING_GROUP_ID) {
-                    this.#loadElementStyling(celldlObject, group, false)
-                }
+                this.#loadElementStyling(celldlObject, group, celldlObject.isConnection)
             })
         }
     }
 
-    #loadElementProperties(celldlObject: CellDLObject,
-                          group: PropertyGroup) {
-        const propertyTemplates = this.#propertyGroups[ELEMENT_GROUP_INDEX]!
+    #loadElementProperties(celldlObject: CellDLObject, componentGroup: PropertyGroup) {
+        const propertyTemplates = this.#elementPropertiesTemplate
         const pluginData = <PluginData>celldlObject.pluginData(this.id)
-        const elementTemplate = pluginData.elementTemplate
-        propertyTemplates.items.forEach((itemTemplate: ItemDetails) => {
+
+        propertyTemplates.items.forEach((itemDetails: ItemDetails) => {
             const items: ItemDetails[] = []
-            if (itemTemplate.itemId === BG_INPUT.ElementType) {
-                const discreteItem = this.#getElementTypeItem(celldlObject, itemTemplate, pluginData)
+            if (itemDetails.itemId === BG_PROPERTIES_ITEM.ElementType) {
+                const discreteItem = this.#getElementTypeItem(celldlObject, itemDetails, pluginData)
                 items.push(discreteItem)
-            } else if (itemTemplate.itemId === BG_INPUT.ElementSpecies ||
-                       itemTemplate.itemId === BG_INPUT.ElementLocation ||
-                       itemTemplate.itemId === BG_INPUT.ElementValue) {
-                let item = getItemProperty(celldlObject, itemTemplate)
-                if (!item
-                 && itemTemplate.itemId === BG_INPUT.ElementValue
-                 && elementTemplate && elementTemplate.value) {
-                    item = {...itemTemplate, units: elementTemplate.value.units}
-                }
+            } else if (itemDetails.itemId === BG_PROPERTIES_ITEM.ElementSpecies ||
+                       itemDetails.itemId === BG_PROPERTIES_ITEM.ElementLocation) {
+                const item = getItemProperty(celldlObject, itemDetails)
                 if (item) {
-                    if (itemTemplate.itemId === BG_INPUT.ElementSpecies) {
+                    if (itemDetails.itemId === BG_PROPERTIES_ITEM.ElementSpecies) {
                         pluginData.species = String(item.value)
-                    }
-                    if (itemTemplate.itemId === BG_INPUT.ElementLocation) {
+                    } else {
                         pluginData.location = String(item.value)
-                    }
-                    if (itemTemplate.itemId === BG_INPUT.ElementValue) {
-                        item.optional = false
-                        if (pluginData.baseComponent.type === this.#transformNodeType) {
-                            item.name = TRANSFORM_NODE_PROMPT
-                        }
                     }
                     items.push(item)
                 }
             }
-            group.items.push(...items)
+            componentGroup.items.push(...items)
         })
+
+        const itemDetail = { ...elementValueItem() }
+        let item = getItemProperty(celldlObject, itemDetail)
+
+        if (!item) {
+            const elementTemplate = pluginData.elementTemplate
+            if (elementTemplate?.value) {
+                item = {...itemDetail, units: elementTemplate.value.units}
+            }
+        }
+        if (item) {
+            item.optional = false
+            if (pluginData.baseComponent.type === this.#transformNodeType) {
+                // see this as a parameter...
+                item.name = TRANSFORM_NODE_PROMPT
+            }
+            componentGroup.items.push(item)
+        }
+/*
+        if (elementTemplate?.parameters) {
+            const itemDetails = this.#getItemVariableDetails(elementTemplate.parameters, 'parameter')
+            this.#loadVariableProperties(celldlObject, itemDetails)
+            componentGroup.items.push(...itemDetails)
+        }
+
+        if (elementTemplate?.variables) {
+            const itemDetails = this.#getItemVariableDetails(elementTemplate.variables, 'variable')
+            this.#loadVariableProperties(celldlObject, itemDetails)
+            componentGroup.items.push(...itemDetails)
+        }
+*/
+/*
+// add initial value to group
+
+// add variable values to group
+
+            } else if (itemTemplate.itemId === BG_PROPERTIES_ITEM.ElementValue) {
+                let item = getItemProperty(celldlObject, itemDetails)
+                if (!item && elementTemplate && itemDetails.value) {
+                    item = {...itemTemplate, units: itemDetails.value.units}
+                }
+                if (item) {
+                    item.optional = false
+                    if (pluginData.baseComponent.type === this.#transformNodeType) {
+                        item.name = TRANSFORM_NODE_PROMPT
+                    }
+                    items.push(item)
+                }
+            }
+*/
+
     }
 
-    #loadElementStyling(celldlObject: CellDLObject, group: PropertyGroup, connection: boolean) {
+    #loadElementStyling(celldlObject: CellDLObject, componentGroup: PropertyGroup, connection: boolean) {
         if (connection) {
-            group.styling = {
+            componentGroup.styling = {
                 pathStyle: getSvgPathStyle(celldlObject.celldlSvgElement!.svgElement)
             }
         } else {
@@ -671,13 +693,13 @@ export class BondgraphPlugin implements PluginInterface {
             if (!('fillColours' in pluginData)) {
                 pluginData.fillColours = getSvgFillStyle(celldlObject.celldlSvgElement!.svgElement.outerHTML)
             }
-            group.styling = {
+            componentGroup.styling = {
                 fillColours: pluginData.fillColours || []
             }
         }
     }
 
-    #loadVariableProperties(celldlObject: CellDLObject, group: PropertyGroup) {
+    #loadVariableProperties(celldlObject: CellDLObject, items: ItemDetails[]) {
         const objectUri = celldlObject.uri.toString()
 
         const values: Map<string, string> = new Map()
@@ -695,7 +717,7 @@ export class BondgraphPlugin implements PluginInterface {
             values.set(r.get('name')!.value, r.get('value')!.value)
         })
 
-        group.items.forEach(item => {
+        items.forEach(item => {
             const itemVariable = item.itemId.split('/')
             const varName = itemVariable[1]!
             if (values.has(varName)) {
@@ -709,14 +731,29 @@ export class BondgraphPlugin implements PluginInterface {
     //==========================================================================
 
     #deleteElementValue(celldlObject: CellDLObject) {
-        const item = this.#propertyGroups[ELEMENT_GROUP_INDEX]!.items[ELEMENT_VALUE_INDEX]!
-        updateItemProperty(item.property, { newValue: '', oldValue: ''}, celldlObject)
+const FIXED_PART_LENGTH = 3
+        const items = this.#elementPropertiesTemplate.items
+        if (items.length > FIXED_PART_LENGTH && items[FIXED_PART_LENGTH]!.itemId === BG_PROPERTIES_ITEM.ElementValue) {
+            updateItemProperty(items[FIXED_PART_LENGTH]!.property, { newValue: '', oldValue: ''}, celldlObject)
+        }
     }
 
     #setElementValueTemplate(variable: Variable|undefined, group: PropertyGroup) {
+
+/* ****
+
+As above FIXED_PART_LENGTH
+        for (const item of group.items) {
+            if (item.itemId === BG_PROPERTIES_ITEM.ElementValue) {
+
+*/
+
+
+/***
+
         const haveVarItem = (group.items.length > ELEMENT_VALUE_INDEX)
 
-        const itemDefn = this.#propertyGroups[ELEMENT_GROUP_INDEX]!.items[ELEMENT_VALUE_INDEX]!
+        const itemDefn = this.#elementPropertiesTemplate.items[ELEMENT_VALUE_INDEX]!
         if (haveVarItem) {
             const item = group.items[ELEMENT_VALUE_INDEX]!
             if (variable) {
@@ -732,26 +769,23 @@ export class BondgraphPlugin implements PluginInterface {
                 optional: false
             }))
         }
+*/
     }
 
-    #setVariableTemplates(variables: IdVariableMap, group: PropertyGroup, reset: boolean=false) {
-        if (reset) {
-            group.items.length = 0
+    #getItemVariableDetails(variables: IdVariableMap, idPrefix: string): ItemDetails[] {
+        const itemTemplates: ItemDetails[] = []
+        for (const variable of variables.values()) {
+            itemTemplates.push({
+                itemId: `${idPrefix}/${variable.name}`,
+                property: BGF.uri('parameterValue').value,
+                name: variable.name,
+                units: variable.units,
+                minimumValue: 0,
+                defaultValue: 0,
+                numeric: true
+            } as ItemDetails)
         }
-        if (group.items.length === 0) {
-            for (const variable of variables.values()) {
-                // @ts-expect-error: WIP
-                group.items.push({
-                    itemId: `${group.groupId}/${variable.name}`,
-                    property: BGF.uri('parameterValue').value,
-                    name: variable.name,
-                    units: variable.units,
-                    minimumValue: 0,
-                    defaultValue: 0,
-                    numeric: true
-                })
-            }
-        }
+        return itemTemplates
     }
 
     //==========================================================================
@@ -781,11 +815,19 @@ DEBUG ONLY **/
         const pluginData = (<PluginData>celldlObject.pluginData(this.id))
         const elementTemplate = pluginData.elementTemplate
         if (elementTemplate) {
-            if (itemId === BG_INPUT.ElementType && value.newValue !== value.oldValue) {
-                // Possible element types depend on the component's domain so recalculate
-                const elementTypeItem = componentProperties[ELEMENT_GROUP_INDEX]!.items[ELEMENT_TYPE_INDEX]!
-                const possibleValues = this.#elementTypePossibleValues(celldlObject, pluginData.baseComponent)
-                elementTypeItem.possibleValues = possibleValues
+            if (itemId === BG_PROPERTIES_ITEM.ElementType && value.newValue !== value.oldValue) {
+                for (const propertyGroup of componentProperties) {
+                    if (propertyGroup.groupId === ELEMENT_PROPERTIES_GROUP_ID) {
+                        // Possible element types depend on the component's domain so recalculate
+                        const elementTypeItem = propertyGroup.items[ELEMENT_TYPE_INDEX]!
+                        const possibleValues = this.#elementTypePossibleValues(celldlObject, pluginData.baseComponent)
+                        elementTypeItem.possibleValues = possibleValues
+                        break
+                    }
+                }
+
+/****
+
                 // The component might now have a `value` field
                 this.#setElementValueTemplate(elementTemplate.value,
                                               componentProperties[ELEMENT_GROUP_INDEX]!)
@@ -794,9 +836,11 @@ DEBUG ONLY **/
                 }
                 // And parameters and variables
                 this.#setVariableTemplates(elementTemplate.parameters,
-                                           componentProperties[PARAMS_GROUP_INDEX]!, true)
+                                           componentProperties[PARAMS_GROUP_INDEX]!, true)  // true ==> clear and reload
                 this.#setVariableTemplates(elementTemplate.variables,
                                            componentProperties[VARS_GROUP_INDEX]!, true)
+
+***/
             }
             this.#updateVariableProperties(value, itemId, celldlObject, elementTemplate)
         }
@@ -821,15 +865,14 @@ DEBUG ONLY **/
 
     async #updateElementProperties(value: ValueChange, itemId: string,
                              celldlObject: CellDLObject) {
-        const propertyTemplates = this.#propertyGroups[ELEMENT_GROUP_INDEX]!
         const pluginData = (<PluginData>celldlObject.pluginData(this.id))
 
-        for (const item of propertyTemplates.items) {
+        for (const item of this.#elementPropertiesTemplate.items) {
             if (itemId === item.itemId) {
                 alert.clear()
-                if (itemId === BG_INPUT.ElementType) {
+                if (itemId === BG_PROPERTIES_ITEM.ElementType) {
                     await this.#updateElementType(item, value, celldlObject)
-                } else if (itemId === BG_INPUT.ElementSpecies) {
+                } else if (itemId === BG_PROPERTIES_ITEM.ElementSpecies) {
                     const errorMsg = await this.#updateSvgElement(celldlObject, value.newValue, pluginData.location)
                     if (errorMsg === '') {
                         updateItemProperty(item.property, value, celldlObject)
@@ -837,7 +880,7 @@ DEBUG ONLY **/
                     } else {
                         alert.error(errorMsg)
                     }
-                } else if (itemId === BG_INPUT.ElementLocation) {
+                } else if (itemId === BG_PROPERTIES_ITEM.ElementLocation) {
                     pluginData.location = value.newValue
                     const errorMsg = await this.#updateSvgElement(celldlObject, pluginData.species, value.newValue)
                     if (errorMsg === '') {
@@ -846,7 +889,7 @@ DEBUG ONLY **/
                     } else {
                         alert.error(errorMsg)
                     }
-                } else if (itemId === BG_INPUT.ElementValue) {
+                } else if (itemId === BG_PROPERTIES_ITEM.ElementValue) {
                     this.#updateElementValue(value, celldlObject)
                 }
                 break
@@ -891,9 +934,14 @@ DEBUG ONLY **/
             return
         }
         const groupId = itemVariable[0]!
+
+        // *****************
+        /*
         if (groupId !== BG_GROUP.ParameterGroup && groupId === BG_GROUP.VariableGroup) {
             return
-        }
+        } */
+
+
         const varName = itemVariable[1]!
         const objectUri = celldlObject.uri.toString()
         celldlObject.rdfStore.update(`${SPARQL_PREFIXES}

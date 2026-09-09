@@ -73,11 +73,6 @@ export interface PluginInterface {
     componentLibrary: ComponentLibrary
 
     /**
-     * Get groups of properties that components might have.
-     */
-    getPropertyGroups: () => PropertyGroup[]
-
-    /**
      * Get CSS style definitions for the plugin.
      */
     styleRules: () => string
@@ -162,11 +157,18 @@ export interface PluginInterface {
     getMaxConnections: (celldlObject: CellDLObject) => number
 
     /**
-     * Return the template for an object, given its ID.
+     * Return the template for an object, given its Id.
      *
-     * @param id
+     * @param templateId
      */
-    getObjectTemplateById: (id: string) => ObjectTemplate|undefined
+    getObjectTemplateById: (templateId: string) => ObjectTemplate|undefined
+
+    /**
+     * Return property groups describing items to be shown on a panel
+     *
+     * @param panelID
+     */
+    getPanelTemplates: (panelID: PANEL_ID) => PropertyGroup[]
 
     /**
      * Return the name of a template, given its RDF type.
@@ -181,7 +183,7 @@ export interface PluginInterface {
      * @param celldlObject A CellDL object.
      * @param componentProperties Properties about the object, ordered by their group.
      */
-    loadComponentProperties: (celldlObject: CellDLObject,
+    loadComponentProperties: (panelId: PANEL_ID, celldlObject: CellDLObject,
                               componentProperties: PropertyGroup[]) => void
 
     /**
@@ -381,9 +383,17 @@ export class ComponentLibraryPlugin {
             return objectTemplate
         }
     }
+    getPanelTemplates(panelID: PANEL_ID): PropertyGroup[]
+    {
+        const panelTemplates: PropertyGroup[] = []
+        for (const plugin of this.#registeredPlugins.values()) {
+            panelTemplates.push(...plugin.getPanelTemplates(panelID))
+        }
+        return panelTemplates
+    }
 
-    getObjectTemplateById(fullId: string): ObjectTemplate|undefined {
-        const pluginTemplateId = fullId.split('/')
+    getObjectTemplateById(templateId: string): ObjectTemplate|undefined {
+        const pluginTemplateId = templateId.split('/')
         if (pluginTemplateId.length > 1) {
             const plugin = this.#registeredPlugins.get(pluginTemplateId[0]!)
             if (plugin) {
@@ -394,12 +404,12 @@ export class ComponentLibraryPlugin {
 
     //==========================================================================
 
-    loadComponentProperties(celldlObject: CellDLObject,
+    loadComponentProperties(panelId: PANEL_ID, celldlObject: CellDLObject,
                             componentProperties: PropertyGroup[]): void {
         for (const pluginId of celldlObject.pluginIds) {
             const plugin = this.#registeredPlugins.get(pluginId)
             if (plugin && Object.keys(celldlObject.pluginData(pluginId)).length) {
-                plugin.loadComponentProperties(celldlObject, componentProperties)
+                plugin.loadComponentProperties(panelId, celldlObject, componentProperties)
             }
         }
     }
@@ -421,20 +431,6 @@ export class ComponentLibraryPlugin {
                 await plugin.updateObjectProperties(celldlObject, itemId, value, componentProperties)
             }
         }
-    }
-
-    //==========================================================================
-
-    getPropertyGroups(): PropertyGroup[] {
-        const propertyGroups: PropertyGroup[] = []
-        for (const plugin of this.#registeredPlugins.values()) {
-            propertyGroups.push(...plugin.getPropertyGroups())
-        }
-        return propertyGroups
-    }
-
-    getStylingGroup(): PropertyGroup {
-        return STYLING_GROUP
     }
 
     //==========================================================================
