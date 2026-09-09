@@ -18,13 +18,14 @@ limitations under the License.
 
 ******************************************************************************/
 
-import type { ViewState } from '#root/utils/EditorState'
-import { Point, type PointLike } from '#root/utils/points'
-import { getViewbox, SVG_URI } from '#root/utils/svgUtils'
-import type { CellDLDiagram } from '#editor/diagram'
 import type { CellDLMoveableObject } from '#editor/celldlObjects'
+import type { CellDLDiagram } from '#editor/diagram'
 import type { Extent } from '#editor/geometry'
 import { range } from '#editor/utils'
+
+import type { ViewState } from '#root/utils/editor-types'
+import { Point, type PointLike } from '#root/utils/points'
+import { getViewbox, SVG_URI } from '#root/utils/svgUtils'
 
 //==============================================================================
 

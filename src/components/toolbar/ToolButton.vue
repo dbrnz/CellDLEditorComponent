@@ -56,7 +56,7 @@ const buttonClasses = vue.computed(() => {
 
 const buttonIcon = vue.computed(() => {
     if (props.icon?.startsWith('lucide-')) {
-        return (LucideIcons as Record<string, any>)[props.icon.slice(7)]
+        return (LucideIcons as Record<string, unknown>)[props.icon.slice(7)]
     }
 })
 

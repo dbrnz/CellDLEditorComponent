@@ -414,7 +414,7 @@ export class BondgraphPlugin implements PluginInterface {
                 ?uri a ?type .
                 ?type rdfs:subClassOf* bgf:BondElement
             }`, true)
-        .forEach((r) => {
+        .forEach((r: Map<string, $rdf.Term>) => {
             statements.push(`<${this.#currentDocumentUri}> bgf:hasBondElement ${r.get('uri')!.toString()} .`)
         })
 
@@ -428,7 +428,7 @@ export class BondgraphPlugin implements PluginInterface {
                 ?uri a ?type .
                 ?type rdfs:subClassOf* bgf:JunctionStructure
             }`, true)
-        .forEach((r) => {
+        .forEach((r: Map<string, $rdf.Term>) => {
             statements.push(`<${this.#currentDocumentUri}> bgf:hasJunctionStructure ${r.get('uri')!.toString()} .`)
         })
 
@@ -689,7 +689,7 @@ export class BondgraphPlugin implements PluginInterface {
                     bgf:hasValue ?value
                 ]
             }`
-        ).forEach((r) => {
+        ).forEach((r: Map<string, $rdf.Term>) => {
             values.set(r.get('name')!.value, r.get('value')!.value)
         })
 
@@ -764,7 +764,7 @@ export class BondgraphPlugin implements PluginInterface {
 
             SELECT ?p ?o WHERE {
                 ${objectUri} ?p ?o
-            }`).forEach((r) => {
+            }`).forEach((r: Map<string, $rdf.Term>) => {
             console.log(celldlObject.id, r.get('p')!.value, r.get('o')!.value)
         })
     }
@@ -1082,7 +1082,7 @@ DEBUG ONLY **/
                     bgf:hasUnits ?quantityUnits
                 ] .
             }`
-        ).forEach((r) => {
+        ).forEach((r: Map<string, $rdf.Term>) => {
             const domain = r.get('domain')!
             this.#physicalDomains.set(domain.value, {
                 id: domain.value,
@@ -1112,7 +1112,7 @@ DEBUG ONLY **/
                    sameTerm(?bgClass, bgf:BondElement)
                 || sameTerm(?bgClass, bgf:JunctionStructure))
             } order by ?element`
-        ).forEach((r) => {
+        ).forEach((r: Map<string, $rdf.Term>) => {
             const element = r.get('element')!
             elements.add(element.value)
         })
@@ -1146,7 +1146,7 @@ DEBUG ONLY **/
                   && (sameTerm(?bgClass, bgf:BondElement )
                    || sameTerm(?bgClass, bgf:JunctionStructure )))
             } order by ?element`
-        ).forEach((r) => {
+        ).forEach((r: Map<string, $rdf.Term>) => {
             const element = r.get('element')!
             const label = r.get('label')
             const nodeType = r.get('base')!
@@ -1248,7 +1248,7 @@ DEBUG ONLY **/
                      || exists {<${base}> a bgf:CompositeElement}
                     )
                   } order by ?label`
-            ).forEach((r) => {
+            ).forEach((r: Map<string, $rdf.Term>) => {
                 const element = r.get('element')!
                 const domainId = r.get('domain')!.value
                 const label = r.get('label')
@@ -1335,7 +1335,7 @@ DEBUG ONLY **/
                     ]
                 }
             } ORDER BY ?element ?parameterName ?variableName`
-        ).forEach((r) => {
+        ).forEach((r: Map<string, $rdf.Term>) => {
             this.#saveParametersAndStates(r)
         })
         // Find parameters and variables for Composite templates
@@ -1360,7 +1360,7 @@ DEBUG ONLY **/
                     ]
                 }
             } ORDER BY ?element ?parameterName ?variableName`
-        ).forEach((r) => {
+        ).forEach((r: Map<string, $rdf.Term>) => {
             this.#saveParametersAndStates(r)
         })
     }

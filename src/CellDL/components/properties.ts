@@ -20,7 +20,7 @@ limitations under the License.
 
 import * as vue from 'vue'
 
-import { DCT, RDFS } from '@celldl/rdf'
+import { DCT, RDFS, type Term } from '@celldl/rdf'
 
 //==============================================================================
 
@@ -122,7 +122,7 @@ export function getItemProperty(celldlObject: CellDLObject,
         SELECT ?value WHERE {
             ${objectUri} <${itemTemplate.property}> ?value
         }`
-    ).forEach((r) => {
+    ).forEach((r: Map<string, Term>) => {
         value = r.get('value')?.value
     })
 

@@ -92,7 +92,7 @@ export class DomainGraph {
         // Add all elements without their domains
         rdfStore
             .query(`${SPARQL_PREFIXES}${BOND_ELEMENT_QUERY}`, true)
-            .forEach((r) => {
+            .forEach((r: Map<string, $rdf.Term>) => {
                 const model = r.get('model')!.value
                 if (!modelUri) {
                     modelUri = model
@@ -112,7 +112,7 @@ export class DomainGraph {
         // Add all junctions and note TransformNodes
         rdfStore
             .query(`${SPARQL_PREFIXES}${JUNCTION_STRUCTURE_QUERY}`, true)
-            .forEach((r) => {
+            .forEach((r: Map<string, $rdf.Term>) => {
                 const model = r.get('model')!.value
                 if (model === modelUri) {
                     const junction = r.get('junction')!.value
@@ -128,7 +128,7 @@ export class DomainGraph {
         // Add any unconnected ports
         rdfStore
             .query(`${SPARQL_PREFIXES}${UNCONNECTED_PORT_QUERY}`)
-            .forEach((r) => {
+            .forEach((r: Map<string, $rdf.Term>) => {
                 const port = r.get('port')!.value
                 this.#graph.addNode(port)
             }
@@ -136,7 +136,7 @@ export class DomainGraph {
         // Add all bonds
         rdfStore
             .query(`${SPARQL_PREFIXES}${POWER_BOND_QUERY}`)
-            .forEach((r) => {
+            .forEach((r: Map<string, $rdf.Term>) => {
                 this.#graph.addEdgeWithKey(r.get('bond')!.value, r.get('source')!.value, r.get('target')!.value)
             }
         )
