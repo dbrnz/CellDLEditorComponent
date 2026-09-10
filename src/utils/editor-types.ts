@@ -65,6 +65,8 @@ export interface ValueChange {
 //==============================================================================
 
 export type ComponentProperties = {
+    objectId?: string
+    panelId: string
     groups: PropertyGroup[]
 }
 

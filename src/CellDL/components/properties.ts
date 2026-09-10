@@ -40,7 +40,7 @@ import {
 //==============================================================================
 //==============================================================================
 
-const OBJECT_METADATA_GROUP = 'object-metadata'
+const OBJECT_METADATA_GROUP = 'object-metadata-group'
 
 function objectMetadata(): NamedProperty[] {
     return [
@@ -57,8 +57,8 @@ function objectMetadata(): NamedProperty[] {
 
 // This would be extended by an annotation plugin...
 
-export function objectMetadataTemplate(): PropertyGroup[] {
-    return [{
+export function objectMetadataTemplate(): PropertyGroup {
+    return {
         groupId: OBJECT_METADATA_GROUP,
         items: objectMetadata().map((nameUri: NamedProperty) => {
             return {
@@ -68,7 +68,7 @@ export function objectMetadataTemplate(): PropertyGroup[] {
                 defaultValue: ''
             }
         })
-    }]
+    }
 }
 
 //==============================================================================
@@ -142,6 +142,7 @@ export function updateItemProperty(property: string, value: ValueChange,
 export class ObjectPropertiesPanel {
     #groupTemplate: PropertyGroup[]
     #componentPropertiesRef = vue.ref<ComponentProperties>({
+        panelId: '',
         groups: []
     })
     #panelId: PANEL_ID
@@ -150,6 +151,7 @@ export class ObjectPropertiesPanel {
         this.#panelId = panelId
         this.#groupTemplate = groupTemplate
         this.#componentPropertiesRef.value = {
+            panelId: panelId,
             groups: structuredClone(this.#groupTemplate)
         }
         for (const group of this.#componentPropertiesRef.value.groups) {
@@ -164,29 +166,26 @@ export class ObjectPropertiesPanel {
 
     //==================================
 
-    clearObjectProperties() {
-        // Clear each group's list of items
-        for (const group of this.#componentPropertiesRef.value.groups) {
-            group.items = []
-            if (group.styling) {
-                group.styling = {}
+    setObjectProperties(celldlObject: CellDLObject|undefined) {
+        if (!celldlObject) {
+            this.#componentPropertiesRef.value.objectId = undefined
+        } else if (celldlObject.id !== this.#componentPropertiesRef.value.objectId) {
+            this.#componentPropertiesRef.value.objectId = celldlObject.id
+            for (const group of this.#componentPropertiesRef.value.groups) {
+                group.items.length = 0
             }
-        }
-    }
-
-    setObjectProperties(celldlObject: CellDLObject|null) {
-        this.clearObjectProperties()
-        if (celldlObject) {
             if (this.#panelId === PANEL_ID.METADATA_PANEL) {
                 // First get generic metadata
                 for (const group of this.#componentPropertiesRef.value.groups) {
                     if (group.groupId === OBJECT_METADATA_GROUP) {
-                        group.items.forEach((itemTemplate: ItemDetails) => {
+                        const template = objectMetadataTemplate()
+                        template.items.forEach((itemTemplate: ItemDetails) => {
                             const item = getItemProperty(celldlObject, itemTemplate)
                             if (item) {
                                 group.items.push(item)
                             }
                         })
+                        break
                     }
                 }
             }

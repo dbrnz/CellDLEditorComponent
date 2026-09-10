@@ -34,7 +34,7 @@ import { type MoveUndoState, undoRedo } from '#editor/diagram/undoredo'
 import { round } from '#editor/utils'
 
 import { isMacOs } from '#root/utils/common'
-import { type ComponentProperties, PANEL_ID } from '#root/utils/editor-types'
+import { PANEL_ID } from '#root/utils/editor-types'
 import { type Point, type PointLike, PointMath } from '#root/utils/points'
 import type { StringProperties } from '#root/utils/types'
 import { componentLibraryPlugin } from '#root/plugins'
@@ -165,7 +165,7 @@ export class CellDLEditor {
     #panels: Map<PANEL_ID, ObjectPropertiesPanel> = new Map([
         [
             PANEL_ID.METADATA_PANEL, new ObjectPropertiesPanel(PANEL_ID.METADATA_PANEL, [
-                ...objectMetadataTemplate(),
+                objectMetadataTemplate(),
                 ...componentLibraryPlugin.getPanelTemplates(PANEL_ID.METADATA_PANEL)
             ])
         ],

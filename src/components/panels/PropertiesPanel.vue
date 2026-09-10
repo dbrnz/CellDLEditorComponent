@@ -2,10 +2,10 @@
     ToolPanel(:id=toolId)
         template(#content)
             div(
-                v-if="disabled"
-            ) Please select an element or path.
+                v-if="!properties.objectId"
+            ) Please select a single element or path.
             .group(
-                v-for="group in groups"
+                v-for="group in expandedGroups"
                 v-if="!disabled"
             )
                InputWidget(
@@ -69,63 +69,62 @@ const props = defineProps<{
 
 const properties = vue.inject<vue.Ref<ComponentProperties>>(`${props.toolId}-componentProperties`)
 
-
-
-const disabled = vue.computed<boolean>(() => {
-    if (properties) {
-        for (const group of properties.value.groups) {
-            if (group.items.length > 0 || group.styling) {
-                return false
-            }
+const disabled = vue.ref<boolean>(properties?.value ? !properties.value.objectId : true)
+const expandedGroups = vue.ref<ExpandedPropertyGroup[]>([])
+vue.watch(
+    () => properties?.value,
+    (newValue) => {
+        const visible = !!newValue?.objectId
+        if (visible) {
+            setExpandededGroups(newValue.groups)
         }
-    }
-    return true
-})
+        disabled.value = !visible
+    },
+    { deep: true }
+)
 
-const groups = vue.computed<ExpandedPropertyGroup[]>(() => {
-    const groups: ExpandedPropertyGroup[] = []
-    if (properties?.value.groups) {
-        for (const group of properties.value.groups) {
-            const styling = group.styling || {}
-            const objectType = 'fillColours' in styling ? 'node'
-                             : 'pathStyle' in styling ? 'path'
-                             : group.items.length > 0 ? 'items'
-                             : 'none'
-            let objectStyle: INodeStyle|IPathStyle|undefined
-            if ('fillColours' in styling) {
-                const fillColours: string[] = [...(styling.fillColours || [])]
-                let direction = 'H'
-                const colours: string[] = []
-                // biome-ignore lint/style/noNonNullAssertion: fillColours is at least 1 long
-                if (fillColours.length && ['H', 'V'].includes(fillColours[0]!)) {
-                    // @ts-expect-error
-                    direction = fillColours.shift()
-                }
-                if (fillColours.length === 1) {
-                    // biome-ignore lint/style/noNonNullAssertion: fillColours is 1 long
-                    colours.push(fillColours[0]!.trim())
-                } else if (fillColours.length) {
-                    fillColours.forEach(colour => {
-                        colours.push(colour.trim())
-                    })
-                }
-                objectStyle = {
-                    gradientFill: colours.length > 1,
-                    colours,
-                    direction
-                } as INodeStyle
-            } else if ('pathStyle' in styling) {
-                objectStyle = styling.pathStyle
+function setExpandededGroups(groups: PropertyGroup[]) {
+    const exGroups: ExpandedPropertyGroup[] = []
+    for (const group of groups) {
+        const styling = group.styling || {}
+        const objectType = 'fillColours' in styling ? 'node'
+                         : 'pathStyle' in styling ? 'path'
+                         : group.items.length > 0 ? 'items'
+                         : 'none'
+        let objectStyle: INodeStyle|IPathStyle|undefined
+        if ('fillColours' in styling) {
+            const fillColours: string[] = [...(styling.fillColours || [])]
+            let direction = 'H'
+            const colours: string[] = []
+            // biome-ignore lint/style/noNonNullAssertion: fillColours is at least 1 long
+            if (fillColours.length && ['H', 'V'].includes(fillColours[0]!)) {
+                // @ts-expect-error
+                direction = fillColours.shift()
             }
-            groups.push({
-                ...group,
-                objectType,
-                objectStyle
-            })
+            if (fillColours.length === 1) {
+                // biome-ignore lint/style/noNonNullAssertion: fillColours is 1 long
+                colours.push(fillColours[0]!.trim())
+            } else if (fillColours.length) {
+                fillColours.forEach(colour => {
+                    colours.push(colour.trim())
+                })
+            }
+            objectStyle = {
+                gradientFill: colours.length > 1,
+                colours,
+                direction
+            } as INodeStyle
+        } else if ('pathStyle' in styling) {
+            objectStyle = styling.pathStyle
         }
+        exGroups.push({
+            ...group,
+            objectType,
+            objectStyle
+        })
     }
-    return groups
-})
+    expandedGroups.value = exGroups
+}
 
 const emit = defineEmits(['panel-event', 'style-event'])
 
