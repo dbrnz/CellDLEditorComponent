@@ -40,12 +40,13 @@ import type {
     CellDLObject
 } from '#editor/celldlObjects'
 import { CELLDL_CLASS_MAP } from '#editor/celldlObjects'
-import type { Constructor } from '#root/utils/types'
 import type {
     ComponentLibrary,
     LibraryComponentTemplate,
     ObjectTemplate,
 } from '#editor/components'
+
+import type { Constructor } from '#root/utils/types'
 import type {
     PANEL_ID,
     PropertyGroup,

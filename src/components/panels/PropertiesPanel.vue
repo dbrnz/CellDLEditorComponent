@@ -52,7 +52,6 @@ import InputWidget from '../widgets/InputWidget.vue'
 import FillStyle from './FillStyle.vue'
 import PathStyle from './PathStyle.vue'
 
-
 import type {
     INodeStyle,
     IPathStyle

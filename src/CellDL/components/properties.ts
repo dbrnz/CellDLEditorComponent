@@ -140,11 +140,11 @@ export function updateItemProperty(property: string, value: ValueChange,
 //==============================================================================
 
 export class ObjectPropertiesPanel {
-    #groupTemplate: PropertyGroup[]
     #componentPropertiesRef = vue.ref<ComponentProperties>({
         panelId: '',
         groups: []
     })
+    #groupTemplate: PropertyGroup[]
     #panelId: PANEL_ID
 
     constructor(panelId: PANEL_ID, groupTemplate: PropertyGroup[]) {
@@ -163,8 +163,6 @@ export class ObjectPropertiesPanel {
     get panelId() {
         return this.#panelId
     }
-
-    //==================================
 
     setObjectProperties(celldlObject: CellDLObject|undefined) {
         if (!celldlObject) {
@@ -198,8 +196,6 @@ console.log('s obj p', celldlObject.id, this.#panelId, this.#componentProperties
         }
     }
 
-    //==================================
-
     async updateObjectProperties(celldlObject: CellDLObject|null,
                                  itemId: string, value: ValueChange) {
         if (celldlObject) {
@@ -222,8 +218,6 @@ console.log('s obj p', celldlObject.id, this.#panelId, this.#componentProperties
                                                                 this.#componentPropertiesRef.value.groups)
         }
     }
-
-    //==================================
 
     async updateObjectStyling(celldlObject: CellDLObject|null, objectType: string, styling: StyleObject) {
         if (celldlObject) {
