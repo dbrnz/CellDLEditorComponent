@@ -12,16 +12,6 @@
                     :contextMenuProps="contextMenuProps"
                 )
                 <!-- context-menu(id="context-menu")  -->
-            #panel-content(
-                :class="{ hidden: !panelVisible }"
-            )
-                component(
-                    v-if="panelComponent"
-                    :is="panelComponent"
-                    :toolId="panelToolId"
-                    @panel-event="panelEvent"
-                )
-                // @style-event="styleEvent"
             EditorToolbar.editor-bar(
                 :buttons="panelButtons"
                 type="panel"
@@ -272,19 +262,24 @@ const toolButtons = vue.ref<EditorToolButton[]>([
 
 const panelButtons = vue.ref<EditorToolButton[]>([
     {
-        toolId: PANEL_IDS.PropertyPanel,
-        prompt: 'Component properties',
-        icon: 'ci-cog',
+        toolId: PANEL_ID.PROPERTIES_PANEL,
+        prompt: 'Properties',
+        icon: 'lucide-Settings',
+        panel: vue.markRaw(PropertiesPanel)
+    },
+    {
+        toolId: PANEL_ID.METADATA_PANEL,
+        prompt: 'Metadata',
+        icon: 'lucide-FileCode',
+        panel: vue.markRaw(PropertiesPanel)
+    },
+    {
+        toolId: PANEL_ID.STYLE_PANEL,
+        prompt: 'Style',
+        icon: 'lucide-Paintbrush',
         panel: vue.markRaw(PropertiesPanel)
     }
 ])
-
-const panelComponent = vue.ref<vue.Raw<vue.Component>>()
-
-const panelVisible = vue.ref<boolean>()
-panelVisible.value = false
-
-const panelToolId = vue.ref<PANEL_ID>()
 
 //==============================================================================
 
@@ -297,22 +292,11 @@ function resetToolBars() {
 
     // Hide any open panel
     // FUTURE: reset to default panel tool
-
-    panelVisible.value = false
 }
 
 //==============================================================================
 
-function buttonEvent(toolId: PANEL_ID, active: boolean, newComponent: vue.Raw<vue.Component> | null) {
-    if (newComponent) {
-        // Update the RH panel to show its current component
-
-        if (active) {
-            panelComponent.value = newComponent
-            panelToolId.value = toolId
-        }
-        panelVisible.value = active
-    }
+function buttonEvent(toolId: PANEL_ID, active: boolean) {
 
     // Tell the editor that a tool has changed
 
@@ -338,22 +322,6 @@ function popoverEvent(toolId: string, data: PopoverEventData) {
 
         despatchToolbarEvent('value', toolId, data.id)
     }
-}
-
-function panelEvent(toolId: string, itemId: string, oldValue: string, newValue: string) {
-    document.dispatchEvent(
-        new CustomEvent('panel-event', {
-            detail: {
-                type: 'value',
-                source: toolId,
-                itemId: itemId,
-                value: {
-                    oldValue,
-                    newValue
-                }
-            }
-        })
-    )
 }
 
 function styleEvent(toolId: string, object: string, styling: StyleObject) {
@@ -461,15 +429,6 @@ vue.onMounted(async () => {
     border: 2px solid var(--editor-border-color);
     flex: 1;
     overflow: hidden;
-}
-#panel-content {
-    width: 250px;
-    border: 2px solid var(--editor-border-color);
-    border-left-width: 1px;
-    right: 38px; /* This depends on panel bar width... */
-    top: 0px;
-    bottom: 1.6em;
-    position: absolute;
 }
 .hidden {
     display: none;

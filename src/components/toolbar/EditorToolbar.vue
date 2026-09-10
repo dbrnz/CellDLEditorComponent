@@ -14,10 +14,18 @@
                 @button-event="buttonEvent"
             )
                 component(
-                    v-if="type === 'popover' && button.panel"
+                    v-if="type === 'popover'"
                     :is="button.panel"
+                    :title="button.prompt"
                     :toolId="button.toolId"
-                    @popover-event="popoverEvent"
+                    @panel-event="popoverEvent"
+                )
+                component(
+                    v-if="type === 'panel'"
+                    :is="button.panel"
+                    :title="button.prompt"
+                    :toolId="button.toolId"
+                    @panel-event="panelEvent"
                 )
 </template>
 
@@ -46,7 +54,6 @@ const emit = defineEmits<{
     'button-event': [
         toolId: string,
         active: boolean,
-        panel: vue.Raw<vue.Component> | null
     ],
     'popover-event': [
         toolId: string,
@@ -62,16 +69,44 @@ function buttonEvent(toolId: string, active: boolean, panel: vue.Raw<vue.Compone
             button.active = false
         }
     }
-    emit('button-event', toolId, active, props.type === 'panel' ? panel : null)
+    emit('button-event', toolId, active)
 }
 
-function popoverEvent(id: string, data: PopoverEventData) {
-    emit('popover-event', id, data)
+function panelEvent(toolId: string, itemId: string, oldValue: string, newValue: string) {
+    document.dispatchEvent(
+        new CustomEvent('panel-event', {
+            detail: {
+                type: 'value',
+                source: toolId,
+                itemId: itemId,
+                value: {
+                    oldValue,
+                    newValue
+                }
+            }
+        })
+    )
+}
+
+function popoverEvent(toolId: string, data: PopoverEventData) {
+    emit('popover-event', toolId, data)
 }
 
 //==============================================================================
 
 </script>
+
+<style scoped>
+.panel-content {
+    width: 250px;
+    border: 2px solid var(--editor-border-color);
+    border-left-width: 1px;
+    right: 38px; /* This depends on panel bar width... */
+    top: 1.8em;
+    bottom: 1.6em;
+    position: absolute;
+}
+</style>
 
 <style>
 .p-toolbar.vertical,
