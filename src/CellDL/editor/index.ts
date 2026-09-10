@@ -153,7 +153,7 @@ export class CellDLEditor {
     // * set of selected objects.
     #activeObjects: Map<string, CellDLObject> = new Map()
     protected currentObject: CellDLObject | null = null
-    protected selectionSet: SelectionSet = new SelectionSet()
+    protected selectionSet: SelectionSet = new SelectionSet(this)
 
     // Auto close selection box on pointer up, keeping enclosed objects selected
     #selectionBox: SelectionBox | null = null
@@ -355,9 +355,6 @@ export class CellDLEditor {
         this.pointerMoved = false
         this.#activeObjects.clear()
         this.selectionSet.clear()
-        for (const panel of this.#panels.values()) {
-            panel.clearObjectProperties()
-        }
     }
 
     closeDiagram() {
@@ -569,9 +566,6 @@ export class CellDLEditor {
 
     protected setSelectedObject(selectedObject: CellDLObject) {
         if (this.selectionSet.select(selectedObject)) {
-            for (const panel of this.#panels.values()) {
-                panel.setObjectProperties(selectedObject)
-            }
             this.enableContextMenuItem(CONTEXT_MENU.DELETE, true)
             this.enableContextMenuItem(CONTEXT_MENU.INFO, true)
         }
@@ -579,9 +573,6 @@ export class CellDLEditor {
 
     #unsetSelectedObject(selectedObject: CellDLObject|null) {
         if (selectedObject && this.selectionSet.unselect(selectedObject)) {
-            for (const panel of this.#panels.values()) {
-                panel.setObjectProperties(null)
-            }
             this.enableContextMenuItem(CONTEXT_MENU.DELETE, false)
             this.enableContextMenuItem(CONTEXT_MENU.INFO, false)
         }
@@ -601,6 +592,12 @@ export class CellDLEditor {
             this.#selectionBox = null
         }
         this.#showStatus(null)
+    }
+
+    setPropertiesPanelObject(celldlObject: CellDLObject|undefined) {
+        for (const panel of this.#panels.values()) {
+            panel.setObjectProperties(celldlObject)
+        }
     }
 
     #componentTemplateDragEvent(_event: Event) {

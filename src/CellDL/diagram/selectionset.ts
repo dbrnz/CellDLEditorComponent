@@ -19,19 +19,24 @@ limitations under the License.
 ******************************************************************************/
 
 import type { CellDLConnection, CellDLObject } from "#editor/celldlObjects"
-import { notifyChanges } from "#editor/editor"
+import { type CellDLEditor, notifyChanges } from "#editor/editor"
 import { undoRedo } from '#editor/diagram/undoredo'
 import { Point, type PointLike } from "#root/utils/points"
 
 //==============================================================================
 
 export class SelectionSet {
+    #editor: CellDLEditor
     #movedObject: CellDLObject|null = null
     #movedObjectOffset: Point = new Point()
     #selectedConnections: CellDLConnection[] = []
     #selectedObjects: Map<string, CellDLObject> = new Map()
 
     #firstMoveableObject: CellDLObject | null = null
+
+    constructor(editor: CellDLEditor) {
+        this.#editor = editor
+    }
 
     get firstMoveableObject() {
         return this.#firstMoveableObject
@@ -61,6 +66,7 @@ export class SelectionSet {
         if (resetFirst) {
             this.#firstMoveableObject = null
         }
+        this.#updatePanelObject()
     }
 
     select(object: CellDLObject): boolean {
@@ -84,6 +90,7 @@ export class SelectionSet {
                 this.#firstMoveableObject = object
             }
             this.#selectedObjects.set(object.id, object)
+            this.#updatePanelObject()
             object.select(true)
             return true
         }
@@ -113,11 +120,19 @@ export class SelectionSet {
                 // This assumes all selected objects are moveable...
                 this.#firstMoveableObject = [...this.#selectedObjects.values()][0] as CellDLObject
             }
-            this.#selectedObjects.delete(object.id)
+            this.#updatePanelObject()
             object.select(false)
             return true
         }
         return false
+    }
+
+    #updatePanelObject() {
+        if (this.#selectedObjects.size === 1) {
+            this.#editor.setPropertiesPanelObject([...this.#selectedObjects.values()][0])
+        } else {
+            this.#editor.setPropertiesPanelObject(undefined)
+        }
     }
 
     //==========================================================================
