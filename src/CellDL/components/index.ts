@@ -24,7 +24,7 @@ import type { MetadataPropertiesMap } from '@celldl/metadata'
 
 import type { CellDLObject } from '#editor/celldlObjects'
 import type { PointLike } from '#root/utils/points'
-import type { Constructor, StringProperties } from '#root/utils/types'
+import type { StringProperties } from '#root/utils/types'
 
 //==============================================================================
 
@@ -32,7 +32,7 @@ export interface ObjectTemplate {
     /**
      * The object's CellDL class.
      */
-    CellDLClass: Constructor<CellDLObject>
+    CellDLClass: typeof CellDLObject
     /**
      * A description of the object.
      */

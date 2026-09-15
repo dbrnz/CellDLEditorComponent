@@ -723,10 +723,10 @@ export class CellDLDiagram {
         return connection
     }
 
-    #createPort<T extends CellDLConnectedObject>(newObjectClass: Constructor<CellDLInterface|CellDLUnconnectedPort>, point: PointLike): T {
+    #createPort<T extends CellDLConnectedObject>(newObjectClass: typeof CellDLInterface | typeof CellDLUnconnectedPort, point: PointLike): T {
         const connector = this.#addNewObject(
             svgCircleElement(point, 0, { id: this.#nextIdentifier() }), {
-                CellDLClass: newObjectClass as Constructor<CellDLObject>,
+                CellDLClass: newObjectClass,
                 metadataProperties: new MetadataPropertiesMap()
             },
             false

@@ -24,7 +24,6 @@ import { isLiteral, type Literal, type NamedNode, RDF, RDFS } from '@celldl/rdf'
 //==============================================================================
 
 import { Point, type PointLike } from '#root/utils/points'
-import type { Constructor } from '#root/utils/types'
 
 import { alert } from '#editor/editor/alerts'
 import { editGuides } from '#editor/editor/editguides'
@@ -651,7 +650,7 @@ export class CellDLUnconnectedPort extends CellDLConnectedObject {
 //==============================================================================
 //==============================================================================
 
-export const CELLDL_CLASS_MAP: Map<string, Constructor<CellDLObject>> = new Map([
+export const CELLDL_CLASS_MAP: Map<string, typeof CellDLObject> = new Map([
     ['Annotation', CellDLAnnotation],
     ['Compartment', CellDLCompartment],
     ['Component', CellDLComponent],
