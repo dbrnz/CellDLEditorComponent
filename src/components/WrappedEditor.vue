@@ -243,7 +243,7 @@ const toolButtons = vue.ref<EditorToolButton[]>([
         toolId: EDITOR_TOOL_IDS.SelectTool,
         active: (DEFAULT_EDITOR_TOOL_ID as EDITOR_TOOL_IDS) === EDITOR_TOOL_IDS.SelectTool,
         prompt: 'Selection tool',
-        icon: 'ci-pointer'
+        icon: 'lucide-MousePointer'
     },
     {
         toolId: EDITOR_TOOL_IDS.DrawConnectionTool,
