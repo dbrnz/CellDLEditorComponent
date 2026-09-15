@@ -26,6 +26,7 @@
                     :title="button.prompt"
                     :toolId="button.toolId"
                     @panel-event="panelEvent"
+                    @style-event="styleEvent"
                 )
 </template>
 
@@ -38,7 +39,7 @@ useThemeCssVariables('toolbar')
 
 //==============================================================================
 
-import type { EditorToolButton } from '#root/utils/editor-types'
+import type { EditorToolButton, StyleObject } from '#root/utils/editor-types'
 import type { PopoverEventData } from '#root/components/popovers/types'
 
 import ToolButton from './ToolButton.vue'
@@ -90,6 +91,19 @@ function panelEvent(toolId: string, itemId: string, oldValue: string, newValue: 
 
 function popoverEvent(toolId: string, data: PopoverEventData) {
     emit('popover-event', toolId, data)
+}
+
+function styleEvent(toolId: string, object: string, styling: StyleObject) {
+    document.dispatchEvent(
+        new CustomEvent('style-event', {
+            detail: {
+                type: 'value',
+                source: toolId,
+                object,
+                styling
+            }
+        })
+    )
 }
 
 //==============================================================================

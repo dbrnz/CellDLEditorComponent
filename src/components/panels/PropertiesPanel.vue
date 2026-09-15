@@ -4,36 +4,39 @@
             div(
                 v-if="!properties.objectId"
             ) Please select a single element or path.
-            .group(
-                v-for="group in expandedGroups"
-                v-if="!disabled"
+            template(
+                v-else
             )
-               InputWidget(
-                    v-if="group.objectType === 'items'"
-                    v-for="item in group.items"
-                    v-model="item.value"
-                    :itemId="item.itemId"
-                    :name="item.name"
-                    :value="item.value"
-                    :units="item.units"
-                    :numeric="item.numeric"
-                    :maximumValue="item.maximumValue"
-                    :minimumValue="item.minimumValue"
-                    :possibleValues="item.possibleValues"
-                    :stepValue="item.stepValue"
-                    @change="updateProperties"
+                .group(
+                    v-for="group in expandedGroups"
                 )
-                FillStyle(
-                    v-if="group.objectType === 'node'"
-                    :fillStyle="group.objectStyle"
-                    @change="updateNodeStyle"
-                )
-                PathStyle(
-                    v-if="group.objectType === 'path'"
-                    :pathStyle="group.objectStyle"
-                    @change="updatePathStyle"
-                )
-
+                    template(
+                        v-if="group.objectType === 'items'"
+                    )
+                        InputWidget(
+                            v-for="item in group.items"
+                            v-model="item.value"
+                            :itemId="item.itemId"
+                            :name="item.name"
+                            :value="item.value"
+                            :units="item.units"
+                            :numeric="item.numeric"
+                            :maximumValue="item.maximumValue"
+                            :minimumValue="item.minimumValue"
+                            :possibleValues="item.possibleValues"
+                            :stepValue="item.stepValue"
+                            @change="updateProperties"
+                        )
+                    FillStyle(
+                        v-else-if="group.objectType === 'node'"
+                        :fillStyle="group.objectStyle"
+                        @change="updateNodeStyle"
+                    )
+                    PathStyle(
+                        v-else-if="group.objectType === 'path'"
+                        :pathStyle="group.objectStyle"
+                        @change="updatePathStyle"
+                    )
 </template>
 <script setup lang="ts">
 import * as vue from 'vue'

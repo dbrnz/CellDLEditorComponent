@@ -40,7 +40,6 @@ import '#root/assets/icons.css'
 
 import * as vueCommon from '#root/utils/vueCommon'
 
-import type { StyleObject } from '#editor/components/properties'
 import { DEFAULT_CONNECTION_STYLE_DEFINITION } from '#editor/connections'
 import { CellDLDiagram } from '#editor/diagram'
 
@@ -322,19 +321,6 @@ function popoverEvent(toolId: string, data: PopoverEventData) {
 
         despatchToolbarEvent('value', toolId, data.id)
     }
-}
-
-function styleEvent(toolId: string, object: string, styling: StyleObject) {
-    document.dispatchEvent(
-        new CustomEvent('style-event', {
-            detail: {
-                type: 'value',
-                source: toolId,
-                object,
-                styling
-            }
-        })
-    )
 }
 
 //==============================================================================
