@@ -104,12 +104,12 @@ export function getItemProperty(celldlObject: CellDLObject,
             ...itemTemplate,
             value:  Number(valueUnits[0]),
             units: valueUnits[1]
-        }
+        } as ItemDetails
     }
     return {
         ...itemTemplate,
         value: value
-    }
+    } as ItemDetails
 }
 
 //==============================================================================

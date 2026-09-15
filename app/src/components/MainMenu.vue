@@ -118,7 +118,7 @@ const viewItems = {
     items: [
         {
             label: 'Grid',
-            icon: getCheckedIcon(props.viewState.showGrid),
+            icon: getCheckedIcon(!!props.viewState.showGrid),
             command: (e: MenuItemCommandEvent) => {
                 e.item.icon = toggleCheckedIcon(e.item)
                 emit('view-action', 'show-grid', itemChecked(e.item))

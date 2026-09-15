@@ -102,13 +102,13 @@ function setExpandededGroups(groups: PropertyGroup[]) {
             let direction = 'H'
             const colours: string[] = []
             // biome-ignore lint/style/noNonNullAssertion: fillColours is at least 1 long
-            if (fillColours.length && ['H', 'V'].includes(fillColours[0]!)) {
+            if (fillColours.length && ['H', 'V'].includes(fillColours[0] as string)) {
                 // @ts-expect-error
                 direction = fillColours.shift()
             }
             if (fillColours.length === 1) {
                 // biome-ignore lint/style/noNonNullAssertion: fillColours is 1 long
-                colours.push(fillColours[0]!.trim())
+                colours.push((fillColours[0] as string).trim())
             } else if (fillColours.length) {
                 fillColours.forEach(colour => {
                     colours.push(colour.trim())

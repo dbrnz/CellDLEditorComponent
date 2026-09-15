@@ -46,7 +46,6 @@ import type {
     ObjectTemplate,
 } from '#editor/components'
 
-import type { Constructor } from '#root/utils/types'
 import type {
     PANEL_ID,
     PropertyGroup,
@@ -348,7 +347,7 @@ export class ComponentLibraryPlugin {
     }
 
     getObjectTemplate(uri: SubjectType, metadata: MetadataPropertiesMap, rdfStore: MetadataStore): ObjectTemplate|undefined {
-        let CellDLClass: Constructor<CellDLObject>|undefined
+        let CellDLClass: typeof CellDLObject | undefined
         const rdfTypes: string[] = []
         const rows = rdfStore.query(`${SPARQL_PREFIXES}
             PREFIX : <${this.#currentDocumentUri}#>
@@ -425,7 +424,7 @@ export class ComponentLibraryPlugin {
     }
 
     async updateObjectProperties(celldlObject: CellDLObject, panelId: PANEL_ID, itemId: string, value: ValueChange,
-                                    componentProperties: PropertyGroup[]) {
+                                 componentProperties: PropertyGroup[]) {
         for (const pluginId of celldlObject.pluginIds) {
             const plugin = this.#registeredPlugins.get(pluginId)
             if (plugin && Object.keys(celldlObject.pluginData(pluginId)).length) {
