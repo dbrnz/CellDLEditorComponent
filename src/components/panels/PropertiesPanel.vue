@@ -1,5 +1,7 @@
 <template lang="pug">
-    ToolPanel(:id=toolId)
+    ToolPanel
+        template(#title)
+            div {{ title }}
         template(#content)
             div(
                 v-if="!properties.objectId"
@@ -66,6 +68,7 @@ type ExpandedPropertyGroup = PropertyGroup & {
 }
 
 const props = defineProps<{
+    title: string
     toolId: string
 }>()
 
