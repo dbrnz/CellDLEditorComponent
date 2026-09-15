@@ -184,8 +184,8 @@ export interface PluginInterface {
      * @param celldlObject A CellDL object.
      * @param componentProperties Properties about the object, ordered by their group.
      */
-    loadComponentProperties: (panelId: PANEL_ID, celldlObject: CellDLObject,
-                              componentProperties: PropertyGroup[]) => void
+    loadComponentProperties: (componentProperties: PropertyGroup[], panelId: PANEL_ID,
+                              celldlObject: CellDLObject) => void
 
     /**
      * Update the diagram's RDF store when the value of a CellDL object property changes.
@@ -195,8 +195,8 @@ export interface PluginInterface {
      * @param value The original and new value of the given property.
      * @param componentProperties Properties about the object, ordered by their group.
      */
-    updateObjectProperties: (celldlObject: CellDLObject, itemId: string, value: ValueChange,
-                             componentProperties: PropertyGroup[]) => Promise<void>
+    updateObjectProperties: (celldlObject: CellDLObject, panelId: PANEL_ID, itemId: string,
+                             value: ValueChange, componentProperties: PropertyGroup[]) => Promise<void>
 
     /**
      * Update the SVG representation of a object when its styling has changed.
@@ -405,12 +405,12 @@ export class ComponentLibraryPlugin {
 
     //==========================================================================
 
-    loadComponentProperties(panelId: PANEL_ID, celldlObject: CellDLObject,
-                            componentProperties: PropertyGroup[]): void {
+    loadComponentProperties(componentProperties: PropertyGroup[], panelId: PANEL_ID,
+                            celldlObject: CellDLObject): void {
         for (const pluginId of celldlObject.pluginIds) {
             const plugin = this.#registeredPlugins.get(pluginId)
             if (plugin && Object.keys(celldlObject.pluginData(pluginId)).length) {
-                plugin.loadComponentProperties(panelId, celldlObject, componentProperties)
+                plugin.loadComponentProperties(componentProperties, panelId, celldlObject)
             }
         }
     }
@@ -424,12 +424,12 @@ export class ComponentLibraryPlugin {
         }
     }
 
-    async updateObjectProperties(celldlObject: CellDLObject, itemId: string, value: ValueChange,
+    async updateObjectProperties(celldlObject: CellDLObject, panelId: PANEL_ID, itemId: string, value: ValueChange,
                                     componentProperties: PropertyGroup[]) {
         for (const pluginId of celldlObject.pluginIds) {
             const plugin = this.#registeredPlugins.get(pluginId)
             if (plugin && Object.keys(celldlObject.pluginData(pluginId)).length) {
-                await plugin.updateObjectProperties(celldlObject, itemId, value, componentProperties)
+                await plugin.updateObjectProperties(celldlObject, panelId, itemId, value, componentProperties)
             }
         }
     }

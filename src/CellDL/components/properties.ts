@@ -189,10 +189,10 @@ export class ObjectPropertiesPanel {
             }
             // Get plugin specific component properties
 
-            componentLibraryPlugin.loadComponentProperties(this.#panelId, celldlObject,
-                                                           this.#componentPropertiesRef.value.groups)
 
 console.log('s obj p', celldlObject.id, this.#panelId, this.#componentPropertiesRef.value)
+            componentLibraryPlugin.loadComponentProperties(this.#componentPropertiesRef.value.groups,
+                                                           this.#panelId, celldlObject)
         }
     }
 
@@ -214,7 +214,7 @@ console.log('s obj p', celldlObject.id, this.#panelId, this.#componentProperties
             }
             // Update plugin specific component properties
 
-            await componentLibraryPlugin.updateObjectProperties(celldlObject, itemId, value,
+            await componentLibraryPlugin.updateObjectProperties(celldlObject, this.#panelId, itemId, value,
                                                                 this.#componentPropertiesRef.value.groups)
         }
     }
