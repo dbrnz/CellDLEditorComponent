@@ -18,7 +18,7 @@
                     :is="button.panel"
                     :title="button.prompt"
                     :toolId="button.toolId"
-                    @panel-event="popoverEvent"
+                    @popover-event="popoverEvent"
                 )
                 component(
                     v-if="type === 'panel'"
