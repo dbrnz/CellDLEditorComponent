@@ -673,19 +673,13 @@ export class BondgraphPlugin implements PluginInterface {
                     items.push(item)
                 }
             } else if (itemDetails.itemId === BG_ELEMENT_VALUE_ITEM) {
-                let item = getItemProperty(celldlObject, itemDetails)
-                if (!item) {
-                    const elementTemplate = pluginData.elementTemplate
-                    if (elementTemplate?.value) {
-                        item = {...itemDetails, units: elementTemplate.value.units}
-                    }
-                }
+                const item = getItemProperty(celldlObject, itemDetails)
                 if (item) {
+                    items.push(item)
                     item.optional = false
                     if (pluginData.baseComponent.type === this.#transformNodeType) {
                         item.name = TRANSFORM_NODE_PROMPT
                     }
-                    items.push(item)
                 }
             }
             componentGroup.items.push(...items)
@@ -764,12 +758,12 @@ export class BondgraphPlugin implements PluginInterface {
         }
     }
 
-    #setElementValue(variable: Variable|undefined, group: PropertyGroup) {
+    #setElementValue(variable: Variable|undefined, group: PropertyGroup, celldlObject: CellDLObject) {
         const groupTemplate = this.#elementPropertiesTemplate.get(BG_PROPERTY_GROUP_ID.ElementInitialValue)
         const itemDefn = groupTemplate?.items.at(0)
         if (itemDefn) {
-            if (group.items.length) {
-                const item = group.items[0] as ItemDetails
+            let item = group.items[0]
+            if (item) {
                 if (variable) {
                     item.name = `${itemDefn.name} (${variable.units})`
                     item.optional = false
@@ -777,13 +771,28 @@ export class BondgraphPlugin implements PluginInterface {
                     item.optional = false
                     item.value = 0
                 }
-
             } else if (variable) {
-                group.items.push(Object.assign({}, itemDefn, {
+                item = Object.assign({}, itemDefn, {
                     name: `${itemDefn.name} (${variable.units})`,
                     optional: false,
                     value: itemDefn.defaultValue
-                }))
+                })
+                group.items.push(item)
+            }
+            if (item) {
+                const elementTemplate = (<PluginData>celldlObject.pluginData(this.id)).elementTemplate
+                const newValue = String(item.value).trim()
+                if (newValue && elementTemplate) {
+                    const objectUri = celldlObject.uri.toString()
+                    const variable = elementTemplate!.value
+                    celldlObject.rdfStore.update(`${SPARQL_PREFIXES}
+                        PREFIX : <${this.#currentDocumentUri}#>
+
+                        INSERT DATA {
+                           ${objectUri} bgf:hasValue "${newValue} ${variable!.units}"^^cdt:ucum .
+                        }
+                    `)
+                }
             }
         }
     }
@@ -861,35 +870,30 @@ DEBUG ONLY **/
                 for (const groupTemplate of this.#elementPropertiesTemplate.values()) {
                     const componentGroup = componentProperties[groupTemplate.index] as PropertyGroup
                     if (groupTemplate.groupId === BG_PROPERTY_GROUP_ID.ElementInitialValue) {
-                        // The component might now have a `value` field
+                        // Remove any existing initial value
+                        componentGroup.items.length = 0
+                        this.#deleteElementValue(celldlObject)
+                        // And add an item if the new element has an initial value
                         if (elementTemplate?.value) {
-                            this.#setElementValue(elementTemplate.value, componentGroup)
-                        } else {
-                            this.#deleteElementValue(celldlObject)
-
-                            // need to remove from RDF...
-                            componentGroup.items.length = 0
+                            this.#setElementValue(elementTemplate.value, componentGroup, celldlObject)
                         }
                     } else if (componentGroup.groupId === BG_PROPERTY_GROUP_ID.ElementParameters) {
-                        // And might have parameters
+                        // Remove any existing parameter values
+                        componentGroup.items.length = 0
+                        this.#deleteVariableItems(celldlObject, componentGroup)
+                        // And add items if the element has parameters
                         if (elementTemplate?.parameters) {
                             this.#setVariableItems(elementTemplate.parameters, componentGroup)
                             this.#loadVariableItems(celldlObject, componentGroup)
-                        } else {
-                            // need to remove from RDF...
-                            componentGroup.items.length = 0
-                            this.#deleteVariableItems(celldlObject, componentGroup)
-
                         }
                     } else if (componentGroup.groupId === BG_PROPERTY_GROUP_ID.ElementVariables) {
-                        // And might have variables
+                        // Remove any existing variable values
+                        componentGroup.items.length = 0
+                        this.#deleteVariableItems(celldlObject, componentGroup)
+                        // And add items if the element has variables
                         if (elementTemplate?.variables) {
                             this.#setVariableItems(elementTemplate.variables, componentGroup)
                             this.#loadVariableItems(celldlObject, componentGroup)
-                        } else {
-                            // need to remove from RDF...
-                            componentGroup.items.length = 0
-                            this.#deleteVariableItems(celldlObject, componentGroup)
                         }
                     }
                 }
