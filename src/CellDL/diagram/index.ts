@@ -612,6 +612,7 @@ export class CellDLDiagram {
         if (object.hasEditGuides) {
             editGuides.addGuide(<CellDLComponent>object)
         }
+        componentLibraryPlugin.addComponent(object)
     }
 
     #addConnection(connection: CellDLConnection) {
@@ -621,7 +622,6 @@ export class CellDLDiagram {
     addConnectedObject(svgElement: SVGGraphicsElement, template: ObjectTemplate): CellDLConnectedObject | null {
         const object = this.#addNewObject(svgElement, template)
         this.#addMoveableObject(object)
-        componentLibraryPlugin.addComponent(object)
         notifyChanges()
         return object as CellDLConnectedObject
     }
