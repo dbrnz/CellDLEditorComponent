@@ -151,7 +151,9 @@ export class DomainGraph {
     //==========================================================================
 
     addNode(nodeUri: string, domain: string|undefined=undefined, transformNode: boolean=false) {
-        this.#graph.addNode(nodeUri)
+        if (!this.#graph.hasNode(nodeUri)) {
+            this.#graph.addNode(nodeUri)
+        }
         if (domain) {
             this.#graph.setNodeAttribute(nodeUri, 'domain', domain)
         }
