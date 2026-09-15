@@ -723,6 +723,9 @@ export class BondgraphPlugin implements PluginInterface {
     }
 
     #loadVariableItems(celldlObject: CellDLObject, group: PropertyGroup) {
+        const predicate = (group.groupId === BG_PROPERTY_GROUP_ID.ElementParameters)
+                        ? 'bgf:parameterValue'
+                        : 'bgf:VariableValue'
         const objectUri = celldlObject.uri.toString()
 
         const values: Map<string, string> = new Map()
@@ -731,7 +734,7 @@ export class BondgraphPlugin implements PluginInterface {
 
             SELECT ?name ?value
             WHERE {
-                ${objectUri} bgf:parameterValue [
+                ${objectUri} ${predicate} [
                     bgf:varName ?name ;
                     bgf:hasValue ?value
                 ]
@@ -790,11 +793,14 @@ export class BondgraphPlugin implements PluginInterface {
             group.items.length = 0
         }
         if (group.items.length === 0) {
+            const property = (group.groupId === BG_PROPERTY_GROUP_ID.ElementParameters)
+                            ? BGF.uri('parameterValue').value
+                            : BGF.uri('valueVariableValue').value
             for (const variable of variables.values()) {
                 // @ts-expect-error: WIP
                 group.items.push({
                     itemId: `${group.groupId}/${variable.name}`,
-                    property: BGF.uri('parameterValue').value,
+                    property: property,
                     name: variable.name,
                     units: variable.units,
                     minimumValue: 0,
@@ -988,11 +994,14 @@ DEBUG ONLY **/
             return
         }
         const objectUri = celldlObject.uri.toString()
+        const predicate = (groupId === BG_PROPERTY_GROUP_ID.ElementParameters)
+                        ? 'bgf:parameterValue'
+                        : 'bgf:VariableValue'
         celldlObject.rdfStore.update(`${SPARQL_PREFIXES}
             PREFIX : <${this.#currentDocumentUri}#>
 
             DELETE WHERE {
-                ${objectUri} bgf:parameterValue ?pv .
+                ${objectUri} ${predicate} ?pv .
                 ?pv bgf:varName "${varName}" ;
                     bgf:hasValue ?value .
             }`)
@@ -1006,7 +1015,7 @@ DEBUG ONLY **/
             PREFIX : <${this.#currentDocumentUri}#>
 
             INSERT DATA {
-                ${objectUri} bgf:parameterValue _:pv .
+                ${objectUri} ${predicate} _:pv .
                 _:pv bgf:varName "${varName}" ;
                      bgf:hasValue "${value.newValue} ${variable.units}"^^cdt:ucum .
             }
