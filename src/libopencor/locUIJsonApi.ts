@@ -58,7 +58,7 @@ export interface IUiJsonParameter {
 }
 
 export interface IUiJsonTextInput {
-  defaultValue: string;
+  defaultValue: string|number;
   name: string;
-  value?: string;
+  value?: string|number;
 }

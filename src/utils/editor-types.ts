@@ -38,7 +38,6 @@ export enum PANEL_ID {
 export type ItemDetails = locApi.IUiJsonInput & {
     itemId: string
     property: string
-    value?: string|number
     possibleValues?: locApi.IUiJsonDiscreteInputPossibleValue[]
     units?: string
     optional?: boolean
