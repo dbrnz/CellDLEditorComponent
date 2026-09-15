@@ -26,9 +26,9 @@ limitations under the License.
 import {
     BGF,
     BGF_URI,
-    type MetadataProperty,
     MetadataPropertiesMap,
-    MetadataStore,
+    type MetadataProperty,
+    type MetadataStore,
     SPARQL_PREFIXES
 } from '@celldl/metadata'
 
@@ -49,6 +49,7 @@ import {
     type StyleObject,
     type ValueChange
 } from '#root/utils/editor-types'
+import type { ConnectionStatus, PluginInterface } from '#root/plugins'
 import {
     getSvgFillStyle,
     getSvgPathStyle,
@@ -69,10 +70,8 @@ import type {
 } from '#editor/components'
 import {
     getItemProperty,
-    updateItemProperty,
+    updateItemProperty
 } from '#editor/components/properties'
-
-import type { ConnectionStatus, PluginInterface } from '#root/plugins'
 
 //==============================================================================
 
@@ -251,10 +250,9 @@ function elementPropertiesTemplate(): IndexedPropertyGroup[] {
         ]
     }, {
         groupId: BG_PROPERTY_GROUP_ID.ElementInitialValue,
-        title: 'Parameters',
+        title: 'Initial value',
         index: 1,
         items: [
-            // @ts-expect-error:
             {
                 itemId: BG_ELEMENT_VALUE_ITEM,
                 property: BGF.uri('hasValue').value,
@@ -266,7 +264,7 @@ function elementPropertiesTemplate(): IndexedPropertyGroup[] {
         ]
     }, {
         groupId: BG_PROPERTY_GROUP_ID.ElementParameters,
-        title: 'Variables',
+        title: 'Parameters',
         index: 2,
         items: []
     }, {
@@ -654,7 +652,7 @@ export class BondgraphPlugin implements PluginInterface {
         }
     }
 
-    #loadElementProperties(celldlObject: CellDLObject, componentGroup: PropertyGroup, groupTemplate: PropertyGroup) {
+    #loadElementProperties(celldlObject: CellDLObject, componentGroup: PropertyGroup, groupTemplate: IndexedPropertyGroup) {
         const pluginData = <PluginData>celldlObject.pluginData(this.id)
         groupTemplate.items.forEach((itemDetails: ItemDetails) => {
             const items: ItemDetails[] = []
@@ -806,7 +804,6 @@ export class BondgraphPlugin implements PluginInterface {
                             ? BGF.uri('parameterValue').value
                             : BGF.uri('valueVariableValue').value
             for (const variable of variables.values()) {
-                // @ts-expect-error: WIP
                 group.items.push({
                     itemId: `${group.groupId}/${variable.name}`,
                     property: property,
@@ -824,7 +821,7 @@ export class BondgraphPlugin implements PluginInterface {
     //==========================================================================
     //==========================================================================
 
-/** DEBUG ONLY
+    // biome-ignore lint/correctness/noUnusedPrivateClassMembers: used for debugging
     #printObjectProperties(celldlObject: CellDLObject) {
         const objectUri = celldlObject.uri.toString()
 
@@ -837,7 +834,6 @@ export class BondgraphPlugin implements PluginInterface {
             console.log(celldlObject.id, r.get('p')!.value, r.get('o')!.value)
         })
     }
-DEBUG ONLY **/
 
     //==========================================================================
     //==========================================================================
@@ -898,8 +894,6 @@ DEBUG ONLY **/
                     }
                 }
             }
-        } else if (panelId === PANEL_ID.STYLE_PANEL) {
-
         }
     }
 
@@ -923,6 +917,8 @@ DEBUG ONLY **/
     async #updateElementProperties(value: ValueChange, itemId: string,
                                    celldlObject: CellDLObject, groupTemplate: IndexedPropertyGroup) {
         const pluginData = (<PluginData>celldlObject.pluginData(this.id))
+
+        // check all groups belonging to the PROPERTIES_PANEL
         if (groupTemplate.groupId === BG_PROPERTY_GROUP_ID.ElementProperties) {
             for (const item of groupTemplate.items) {
                 if (itemId === item.itemId) {
