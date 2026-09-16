@@ -37,6 +37,15 @@ export const SELECTION_STROKE_WIDTH = 3 // pixels
 
 //==============================================================================
 
+export const COMPARTMENT_BACKGROUND = "#ccc"
+export const MEMBRANE_COLOUR = 'purple'
+export const MEMBRANE_CORNER_RADIUS = 40
+export const MEMBRANE_DASH = 2  // * width
+export const MEMBRANE_GAP = 5
+export const MEMBRANE_STROKE_WIDTH = 3
+
+//==============================================================================
+
 export const CELLDL_BACKGROUND_CLASS = 'celldl-background'
 
 //==============================================================================

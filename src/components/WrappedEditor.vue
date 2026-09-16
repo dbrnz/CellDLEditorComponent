@@ -258,6 +258,12 @@ const toolButtons = vue.ref<EditorToolButton[]>([
         prompt: addComponentPrompt(defaultComponent.name),
         image: defaultComponent.imageData,
         panel: vue.markRaw(ComponentPopover)
+    },
+    {
+        toolId: EDITOR_TOOL_IDS.CompartmentTool,
+        active: (DEFAULT_EDITOR_TOOL_ID as EDITOR_TOOL_IDS) === EDITOR_TOOL_IDS.CompartmentTool,
+        prompt: 'Draw compartment',
+        icon: 'lucide-SquareDashed'
     }
 ])
 

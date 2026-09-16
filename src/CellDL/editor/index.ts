@@ -64,7 +64,8 @@ const MAX_POINTER_CLICK_TIME = 200 // milliseconds
 export enum EDITOR_TOOL_IDS {
     SelectTool = 'select-tool',
     DrawConnectionTool = 'draw-connection-tool',
-    AddComponentTool = 'add-component-tool'
+    AddComponentTool = 'add-component-tool',
+    CompartmentTool = 'add-connection-tool'
 }
 
 export const DEFAULT_EDITOR_TOOL_ID = EDITOR_TOOL_IDS.SelectTool
@@ -72,13 +73,15 @@ export const DEFAULT_EDITOR_TOOL_ID = EDITOR_TOOL_IDS.SelectTool
 export enum EDITOR_STATE {
     Selecting = 'SELECTING',
     DrawPath = 'DRAW-PATH',
-    AddComponent = 'ADD-COMPONENT'
+    AddComponent = 'ADD-COMPONENT',
+    DrawCompartment = 'DRAW-COMPARTMENT'
 }
 
 const TOOL_TO_STATE: Map<EDITOR_TOOL_IDS, EDITOR_STATE> = new Map([
     [EDITOR_TOOL_IDS.SelectTool, EDITOR_STATE.Selecting],
     [EDITOR_TOOL_IDS.DrawConnectionTool, EDITOR_STATE.DrawPath],
-    [EDITOR_TOOL_IDS.AddComponentTool, EDITOR_STATE.AddComponent]
+    [EDITOR_TOOL_IDS.AddComponentTool, EDITOR_STATE.AddComponent],
+    [EDITOR_TOOL_IDS.CompartmentTool, EDITOR_STATE.DrawCompartment]
 ])
 
 const DEFAULT_EDITOR_STATE = TOOL_TO_STATE.get(DEFAULT_EDITOR_TOOL_ID)!

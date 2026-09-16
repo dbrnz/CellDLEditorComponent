@@ -38,6 +38,15 @@ export const SVG_URI = 'http://www.w3.org/2000/svg'
 
 //==============================================================================
 
+export interface ICompartmentStyle {
+    cornerRadius: number
+    dashed: boolean
+    doubleGap: number
+    fill: string
+    strokeColour: string
+    strokeWidth: number
+}
+
 export interface INodeStyle {
     gradientFill: boolean
     colours: string[]
