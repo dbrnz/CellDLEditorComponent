@@ -115,6 +115,7 @@ const ID_PREFIX = 'ID-'
 
 export class CellDLDiagram {
     #svgDiagram!: SVGSVGElement
+    #defsElement: SVGDefsElement|null|undefined
 
     #kb = new MetadataStore()
     #celldlEditor: CellDLEditor
@@ -300,12 +301,12 @@ export class CellDLDiagram {
     #setupDefines() {
         // Make sure there is a <defs> and it has a arrow markers for connections
         // (and also a `free-end-connector` ??)
-        let defsElement = this.#svgDiagram.getElementById(CELLDL_DEFINITIONS_ID)
-        if (defsElement === null) {
+        this.#defsElement = this.#svgDiagram.getElementById(CELLDL_DEFINITIONS_ID) as SVGDefsElement
+        if (this.#defsElement === null) {
             this.#svgDiagram.insertAdjacentHTML('afterbegin', `<defs></defs>`)
-            defsElement = this.#svgDiagram.firstChild as SVGDefsElement
-            defsElement.id = CELLDL_DEFINITIONS_ID
-            defsElement.insertAdjacentHTML('afterbegin', componentLibraryPlugin.svgDefinitions())
+            this.#defsElement = this.#svgDiagram.firstChild as SVGDefsElement
+            this.#defsElement.id = CELLDL_DEFINITIONS_ID
+            this.#defsElement.insertAdjacentHTML('afterbegin', componentLibraryPlugin.svgDefinitions())
         }
     }
 
@@ -315,10 +316,9 @@ export class CellDLDiagram {
             `defs#${CELLDL_DEFINITIONS_ID} > style#${CELLDL_STYLESHEET_ID}`
         )
         if (styleElement === null) {
-            const defsElement = this.#svgDiagram.getElementById(CELLDL_DEFINITIONS_ID)
             styleElement = document.createElementNS(SVG_URI, 'style')
             styleElement.id = CELLDL_STYLESHEET_ID
-            defsElement?.prepend(styleElement)
+            this.#defsElement?.prepend(styleElement)
             styleElement.textContent = css
         }
     }
