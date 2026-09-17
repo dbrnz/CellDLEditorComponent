@@ -405,7 +405,9 @@ export class CellDLDiagram {
     #newDiagram() {
         const windowSize = this.#celldlEditor.windowSize
         const svgDiagram = document.createElementNS(SVG_URI, 'svg')
-        svgDiagram.setAttribute('viewBox', `0 0 ${windowSize[0]} ${windowSize[1]}`)
+
+        // centre diagram
+        svgDiagram.setAttribute('viewBox', `${-windowSize[0]/2} ${-windowSize[1]/2} ${windowSize[0]} ${windowSize[1]}`)
         this.#svgDiagram = svgDiagram
         this.#setLayer(CELLDL_DIAGRAM_ID)
     }
