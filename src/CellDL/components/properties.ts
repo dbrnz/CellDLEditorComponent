@@ -189,8 +189,6 @@ export class ObjectPropertiesPanel {
             }
             // Get plugin specific component properties
 
-
-console.log('s obj p', celldlObject.id, this.#panelId, this.#componentPropertiesRef.value)
             componentLibraryPlugin.loadComponentProperties(this.#componentPropertiesRef.value.groups,
                                                            this.#panelId, celldlObject)
         }
