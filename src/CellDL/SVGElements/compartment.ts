@@ -1,6 +1,7 @@
 //==============================================================================
 
 import type { CellDLObject } from '#editor/celldlObjects'
+import type { CellDLDiagram } from '#editor/diagram'
 import type { PointLike } from '#root/utils/points'
 import {
     COMPARTMENT_BACKGROUND,
@@ -41,6 +42,8 @@ function createRectAsString(topLeft: PointLike, bottomRight: PointLike, styling:
     }
     // Background only when a single compartment boundary or this is the innermost boundary
     attributes.fill = offset <= 0 ? COMPARTMENT_BACKGROUND : 'none'
+    // fill might be a gradient
+    // we need the compartment's id for this...
     return svgRect(
         { x: topLeft.x - offset, y: topLeft.y - offset },
         { x: bottomRight.x + offset, y: bottomRight.y + offset },
@@ -108,6 +111,7 @@ function updateRectStyling(rect: SVGRectElement, styling: ICompartmentStyle, off
 class MembraneRect {
     #boundary0: SVGRectElement
     #boundary1: SVGRectElement|undefined
+    #celldlDiagram!: CellDLDiagram
     #styling: ICompartmentStyle
     #svgElement: SVGGElement
 
@@ -118,7 +122,7 @@ class MembraneRect {
         this.#styling = styling
     }
 
-    static create(topLeft: PointLike, bottomRight: PointLike, styling: ICompartmentStyle): MembraneRect {
+    static create(topLeft: PointLike, bottomRight: PointLike, styling: ICompartmentStyle, diagram: CellDLDiagram): MembraneRect {
         const svgElement = document.createElementNS(SVG_URI, 'g')
         svgElement.insertAdjacentHTML('beforeend', createRectAsString(topLeft, bottomRight,  styling, styling.doubleGap/2))
         const boundary0 = svgElement.lastChild as SVGRectElement
@@ -128,7 +132,9 @@ class MembraneRect {
             boundary1 = svgElement.lastChild as SVGRectElement
             svgElement.setAttribute('data-double-gap', String(styling.doubleGap))
         }
-        return new  MembraneRect(svgElement, boundary0, boundary1, styling)
+        const self = new  MembraneRect(svgElement, boundary0, boundary1, styling)
+        self.#celldlDiagram = diagram
+        return self
     }
 
     static createFromElement(svgElement: SVGGElement): MembraneRect|undefined {
@@ -154,7 +160,9 @@ class MembraneRect {
             }
             if (styling && boundary0) {
                 styling.doubleGap = doubleGap
-                return new MembraneRect(svgElement, boundary0, boundary1, styling)
+                const self = new MembraneRect(svgElement, boundary0, boundary1, styling)
+//                self.#celldlDiagram = celldlSvgElement.celldlObject.celldlDiagram
+                return self
             }
         }
     }
@@ -211,7 +219,10 @@ export class Compartment extends BoundedElement {
     #styling: ICompartmentStyle = {...DEFAULT_STYLE}
 
     constructor(object: CellDLObject, topLeft: PointLike, bottomRight: PointLike, gridAligned: boolean=false, align: boolean=false) {
-        const membraneRect = MembraneRect.create(topLeft, bottomRight, DEFAULT_STYLE)
+        const membraneRect = MembraneRect.create(topLeft, bottomRight, DEFAULT_STYLE, object.celldlDiagram)
+
+// we have object.celldlDiagram to access <defs/>
+
         super(object, membraneRect.svgElement, gridAligned, align)
         this.#membraneRect = membraneRect
     }
@@ -220,4 +231,3 @@ export class Compartment extends BoundedElement {
 
 //==============================================================================
 //==============================================================================
-
