@@ -1,11 +1,19 @@
 :root {
     --editor-border-color: var(--p-surface-500);;
     --editor-tooltip-error: darkred;
-  }
+}
 
 :root {
     --editor-canvas-background: #eee;
     --editor-statusbar-background: #ececec;
+}
+
+:root {
+    --editor-compartment-fill: #ccc;
+    --editor-membrane-colour: brown;
+    --editor-membrane-gap: 4;
+    --editor-membrane-radius: 40;
+    --editor-membrane-width: 2;
 }
 
 .celldl-dark-mode {
@@ -93,7 +101,18 @@
     fill-opacity: 0.2;
     stroke: var(--p-surface-0);
     stroke-width: 0.3;
-    stroke-opacity: 0.4;
+}
+#svg-container .selection-rect-outer {
+    fill: none;
+    stroke: var(--editor-membrane-colour);
+    stroke-width: var(--editor-membrane-width);
+    rx: calc(var(--editor-membrane-radius) + var(--editor-membrane-gap)/2)
+}
+#svg-container .selection-rect-inner {
+    fill: var(--editor-compartment-fill);
+    stroke: var(--editor-membrane-colour);
+    stroke-width: var(--editor-membrane-width);
+    rx: calc(var(--editor-membrane-radius) - var(--editor-membrane-gap)/2) /* See DOUBLE_BOUNDARY_OFFSET */
 }
 
 /* Components */

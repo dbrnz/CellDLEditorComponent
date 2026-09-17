@@ -44,7 +44,24 @@ import { componentLibraryPlugin } from '#root/plugins'
 import { EditorFrame } from './editorframe'
 import { DEFAULT_VIEW_STATE, editGuides, EDITOR_GRID_CLASS } from './editguides'
 import PanZoom from './panzoom'
-import { SelectionBox } from './selectionbox'
+import { BoxMaker } from './boxmaker'
+
+//==============================================================================
+
+// Set the CSS variables that style a compartment as it is being drawn
+
+import {
+    COMPARTMENT_BACKGROUND,
+    MEMBRANE_COLOUR,
+    MEMBRANE_CORNER_RADIUS,
+    MEMBRANE_GAP,
+    MEMBRANE_STROKE_WIDTH
+} from '#root/utils/styling'
+document.documentElement.style.setProperty('--editor-compartment-fill', COMPARTMENT_BACKGROUND)
+document.documentElement.style.setProperty('--editor-membrane-colour', MEMBRANE_COLOUR)
+document.documentElement.style.setProperty('--editor-membrane-gap', String(MEMBRANE_GAP))
+document.documentElement.style.setProperty('--editor-membrane-radius', String(MEMBRANE_CORNER_RADIUS))
+document.documentElement.style.setProperty('--editor-membrane-width', String(MEMBRANE_STROKE_WIDTH))
 
 //==============================================================================
 
@@ -159,8 +176,8 @@ export class CellDLEditor {
     protected selectionSet: SelectionSet = new SelectionSet(this)
 
     // Auto close selection box on pointer up, keeping enclosed objects selected
-    #selectionBox: SelectionBox | null = null
-    #newSelectionBox: boolean = false
+    #boxMaker: BoxMaker | null = null
+    #boxMaking: boolean = false
 
     #pointerDownTime: number = 0
 
@@ -273,9 +290,9 @@ export class CellDLEditor {
             } else if (targetId === CONTEXT_MENU.INFO) {
 // WIP               this.#showSelectedObjectInfo()
             } else if (targetId === CONTEXT_MENU.GROUP_OBJECTS) {
-                if (this.#selectionBox) {
-                    this.#selectionBox.makeCompartment()
-                    this.#closeSelectionBox()
+                if (this.#boxMaker) {
+                    this.#boxMaker.makeCompartment()
+                    this.#closeBoxMaker()
                 }
             }
         })
@@ -380,7 +397,8 @@ export class CellDLEditor {
     }
 
     #setDefaultCursor() {
-        if (this.editorState === EDITOR_STATE.DrawPath) {
+        if (this.editorState === EDITOR_STATE.DrawPath
+         || this.editorState === EDITOR_STATE.DrawCompartment) {
             this.#svgDiagram?.style.setProperty('cursor', 'crosshair')
         } else {
             this.#svgDiagram?.style.removeProperty('cursor')
@@ -407,7 +425,7 @@ export class CellDLEditor {
                 this.editorState = TOOL_TO_STATE.get(detail.source as EDITOR_TOOL_IDS)!
                 this.#setDefaultCursor()
                 this.unsetSelectedObjects()
-                this.#closeSelectionBox()
+                this.#closeBoxMaker()
                 if (this.editorState !== EDITOR_STATE.DrawPath) {
                     // Remove any partial path from editor frame...
                     if (this.#pathMaker) {
@@ -590,9 +608,9 @@ export class CellDLEditor {
     #deleteSelectedObjects() {
         this.#unsetActiveObjects()
         this.selectionSet.deleteObjects()
-        if (this.#selectionBox) {
-            this.#selectionBox.close()
-            this.#selectionBox = null
+        if (this.#boxMaker) {
+            this.#boxMaker.close()
+            this.#boxMaker = null
         }
         this.#showStatus(null)
     }
@@ -772,7 +790,7 @@ export class CellDLEditor {
                 this.#unsetActiveObjects()
             }
             return
-        } else if (this.#selectionBox?.pointerEvent(event, this.#domToSvgCoords(event))) {
+        } else if (this.#boxMaker?.pointerEvent(event, this.#domToSvgCoords(event))) {
             return
         }
 
@@ -794,6 +812,10 @@ export class CellDLEditor {
                 } else {
                     this.#nextPathNode = this.#pathMaker.validPathNode(currentObject)
                 }
+            }
+        } else if (this.editorState === EDITOR_STATE.DrawCompartment) {
+            if (currentObject) {
+                element.style.removeProperty('cursor')
             }
         } else {
             if (!currentObject || !this.#activeObjects.has(currentObject.id)) {
@@ -833,7 +855,10 @@ export class CellDLEditor {
         this.pointerMoved = false
         this.#pointerDownTime = Date.now()
         const element = event.target as SVGGraphicsElement
-        if (event.button === 2 || (!event.shiftKey && this.#notDiagramElement(element))) {
+        if (event.button === 2
+         || (!event.shiftKey
+          && this.editorState !== EDITOR_STATE.DrawCompartment
+          && this.#notDiagramElement(element))) {
             this.#svgDiagram?.style.removeProperty('cursor')
             this.#container?.style.setProperty('cursor', 'grab')
             this.#panzoom!.pointerDown(event)
@@ -870,12 +895,12 @@ export class CellDLEditor {
             this.moving = true
             this.moved = false
         } else if (this.editorState === EDITOR_STATE.Selecting) {
-            if (this.#selectionBox) {
-                this.#selectionBox.pointerEvent(event, svgPoint)
+            if (this.#boxMaker) {
+                this.#boxMaker.pointerEvent(event, svgPoint)
             } else if (event.shiftKey) {
                 this.unsetSelectedObjects()
-                this.#selectionBox = new SelectionBox(this, svgPoint)
-                this.#newSelectionBox = true
+                this.#boxMaker = new BoxMaker(this, svgPoint)
+                this.#boxMaking = true
             } else if (this.currentObject?.isConnection) {
                 // Check if a linear path and if so, insert a control point and initialise moving it
                 this.#moveUndoState = undoRedo.setMoveUndoState(this.currentObject, svgPoint)
@@ -887,6 +912,14 @@ export class CellDLEditor {
                     this.moving = true
                     this.moved = false
                 }
+            }
+        } else if (this.editorState === EDITOR_STATE.DrawCompartment) {
+            if (this.#boxMaker) {
+                this.#boxMaker.pointerEvent(event, svgPoint)
+            } else {
+                this.unsetSelectedObjects()
+                this.#boxMaker = new BoxMaker(this, svgPoint, true)
+                this.#boxMaking = true
             }
         }
     }
@@ -912,12 +945,13 @@ export class CellDLEditor {
                 this.#celldlDiagram?.objectMoved(this.currentObject)
             }
             this.moved = true
-            if (this.#selectionBox) {
-                this.#selectionBox.updateSelectedObjects()
+            if (this.#boxMaker) {
+                this.#boxMaker.updateSelectedObjects()
             }
-        } else if (this.editorState === EDITOR_STATE.Selecting) {
-            if (this.#selectionBox) {
-                this.#selectionBox.pointerEvent(event, svgPoint)
+        } else if (this.editorState === EDITOR_STATE.Selecting
+                || this.editorState === EDITOR_STATE.DrawCompartment) {
+            if (this.#boxMaker) {
+                this.#boxMaker.pointerEvent(event, svgPoint)
             }
         }
     }
@@ -933,12 +967,12 @@ export class CellDLEditor {
             this.#setDefaultCursor()
             if (
                 !this.pointerMoved &&
-                !this.#newSelectionBox &&
+                !this.#boxMaking &&
 // WIP                !this.#contextMenu.isOpen &&
-                this.#selectionBox &&
-                !this.#selectionBox.pointInside(svgPoint)
+                this.#boxMaker &&
+                !this.#boxMaker.pointInside(svgPoint)
             ) {
-                this.#closeSelectionBox()
+                this.#closeBoxMaker()
             }
             return
         }
@@ -958,19 +992,20 @@ export class CellDLEditor {
                     this.#moveUndoState.reposition('backwards')
                     this.#moveUndoState = null
                 }
-            } else if (this.editorState === EDITOR_STATE.Selecting) {
-                if (this.#selectionBox && !this.#selectionBox.pointerEvent(event, svgPoint)) {
-                    this.#closeSelectionBox()
+            } else if (this.editorState === EDITOR_STATE.Selecting
+                    || this.editorState === EDITOR_STATE.DrawCompartment) {
+                if (this.#boxMaker && !this.#boxMaker.pointerEvent(event, svgPoint)) {
+                    this.#closeBoxMaker()
                 }
-                this.#newSelectionBox = false
+                this.#boxMaking = false
             }
         }
     }
 
-    #closeSelectionBox() {
-        if (this.#selectionBox) {
-            this.#selectionBox.close()
-            this.#selectionBox = null
+    #closeBoxMaker() {
+        if (this.#boxMaker) {
+            this.#boxMaker.close()
+            this.#boxMaker = null
         }
     }
 

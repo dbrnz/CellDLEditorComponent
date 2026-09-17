@@ -23,6 +23,7 @@ import { svgRect } from '#root/utils/svgUtils'
 import { Point } from '#root/utils/points'
 import { Bounds, ComputedValue, RestrictedValue } from '#editor/geometry'
 import { ControlPoint } from '#editor/geometry/controls'
+import { MEMBRANE_GAP } from '#root/utils/styling'
 
 import { type CellDLEditor, CONTEXT_MENU, getElementId } from '.'
 import { editGuides } from './editguides'
@@ -34,9 +35,11 @@ const SELECTION_BOX_ID = 'editor-selection-box'
 
 //==============================================================================
 
-export class SelectionBox {
+export class BoxMaker {
     #bottomRight: ControlPoint
     #controlPoints: ControlPoint[] = []
+    #doubleBoundary: [SVGRectElement | null, SVGRectElement | null] = [null, null]
+    #doubleWalled: boolean
     #drawing: boolean = false
     #editor: CellDLEditor
     #editorFrame: EditorFrame
@@ -53,7 +56,7 @@ export class SelectionBox {
     #yMin: RestrictedValue | null = null
     #yMax: RestrictedValue | null = null
 
-    constructor(editor: CellDLEditor, startPoint: DOMPoint) {
+    constructor(editor: CellDLEditor, startPoint: DOMPoint, doubleWalled: boolean=false) {
         this.#editor = editor
         // biome-ignore lint/style/noNonNullAssertion: the editor has a frame layer
         this.#editorFrame = editor.editorFrame!
@@ -62,6 +65,7 @@ export class SelectionBox {
         this.#bottomRight = ControlPoint.fromPoint(this.#startPoint)
         this.#size = new Point(0, 0)
         this.#drawing = true
+        this.#doubleWalled = doubleWalled
     }
 
     get bounds(): Bounds {
@@ -89,35 +93,50 @@ export class SelectionBox {
         this.#updateSelectionRect()
     }
 
+    #createRect(cls: string, offset: number=0): SVGRectElement {
+        return this.#editorFrame.addElementAsString(svgRect(
+            { x: this.#topLeft.x - offset, y: this.#topLeft.y - offset },
+            { x: this.#bottomRight.x + offset, y: this.#bottomRight.y + offset },
+            { class: cls }
+        )) as SVGRectElement
+    }
+
+    #updateRect(rect: SVGRectElement, resized: boolean, offset: number=0) {
+        rect.setAttribute('x', `${this.#topLeft.x - offset}`)
+        rect.setAttribute('y', `${this.#topLeft.y - offset}`)
+        if (resized) {
+            rect.setAttribute('width', `${Math.max(0, this.#size.x + 2*offset)}`)
+            rect.setAttribute('height', `${Math.max(0, this.#size.y + 2*offset)}`)
+        }
+    }
+
     #updateSelectionRect(resized = true) {
         if (resized) {
             this.#size = new Point(this.#bottomRight.x - this.#topLeft.x, this.#bottomRight.y - this.#topLeft.y)
         }
+        const offset = MEMBRANE_GAP/2
         if (this.#selectionRect) {
-            this.#selectionRect.setAttribute('x', `${this.#topLeft.x}`)
-            this.#selectionRect.setAttribute('y', `${this.#topLeft.y}`)
-            if (resized) {
-                this.#selectionRect.setAttribute('width', `${this.#size.x}`)
-                this.#selectionRect.setAttribute('height', `${this.#size.y}`)
+            this.#updateRect(this.#selectionRect, resized)
+            if (this.#doubleWalled) {
+                this.#updateRect(this.#doubleBoundary[0] as SVGRectElement, resized,  offset)
+                this.#updateRect(this.#doubleBoundary[1] as SVGRectElement, resized, -offset)
             }
         } else {
-            this.#selectionRect = <SVGRectElement>(
-                this.#editorFrame.addElementAsString(
-                    svgRect(this.#topLeft, this.#bottomRight, { class: 'selection-rect' })
-                )
-            )
+            this.#selectionRect = this.#createRect('selection-rect')
             this.#selectionRect.id = SELECTION_BOX_ID
+            if (this.#doubleWalled) {
+                this.#doubleBoundary[0] = this.#createRect('selection-rect-outer',  offset)
+                this.#doubleBoundary[1] = this.#createRect('selection-rect-inner', -offset)
+            }
         }
         this.#setSelectedObjects()
     }
 
     pointInside(point: DOMPoint): boolean {
-        return (
-            this.#topLeft.x < point.x &&
-            point.x < this.#bottomRight.x &&
-            this.#topLeft.y < point.y &&
-            point.y < this.#bottomRight.y
-        )
+        return (this.#topLeft.x < point.x
+             && point.x < this.#bottomRight.x
+             && this.#topLeft.y < point.y
+             && point.y < this.#bottomRight.y)
     }
 
     makeCompartment() {
@@ -135,7 +154,7 @@ export class SelectionBox {
                 this.#drawTo(point)
             } else if (event.type === 'pointerup') {
                 this.#drawing = false
-                // Allow new SelectionBox to be moved and resized
+                // Allow new BoxMaker to be moved and resized
                 this.drawControlHandles()
             }
             return true
@@ -252,6 +271,7 @@ export class SelectionBox {
     }
 
     #setSelectedObjects() {
+// add to editor's set of selected objects...
         // biome-ignore lint/style/noNonNullAssertion: the editor has a diagram
         const selectedItems = this.#editor
             .celldlDiagram!.objectsContainedIn(this.bounds)
@@ -288,7 +308,8 @@ export class SelectionBox {
 
     #updateContextMenu(enabled: boolean) {
         this.#editor.enableContextMenuItem(CONTEXT_MENU.DELETE, enabled)
-// WIP        this.#editor.enableContextMenuItem(CONTEXT_MENU.GROUP_OBJECTS, enabled)
+        this.#editor.enableContextMenuItem(CONTEXT_MENU.GROUP_OBJECTS, enabled)
+        this.#editor.enableContextMenuItem(CONTEXT_MENU.SELECT, enabled)
     }
 
     updateSelectedObjects() {
