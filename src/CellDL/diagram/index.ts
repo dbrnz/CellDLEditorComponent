@@ -634,13 +634,13 @@ export class CellDLDiagram {
         return connection
     }
 
-    createCompartment(bounds: Bounds, objects: CellDLObject[]): CellDLCompartment {
+    makeComponentGroup(bounds: Bounds, objects: CellDLObject[]): CellDLCompartment {
         // we could simply pass ids into #objects
         const compartmentGroup = document.createElementNS(SVG_URI, 'g')
         compartmentGroup.id = this.#nextIdentifier()
         const cornerPoints = bounds.asPoints()
         const compartmentRect = svgRectElement(cornerPoints[0], cornerPoints[1], { class: 'compartment' })
-        const compartmentShape = new ShapeIntersections(compartmentRect)
+        const compartmentIntersections = new ShapeIntersections(compartmentRect)
         compartmentGroup.appendChild(compartmentRect)
         const objectIds = new Set(objects.map((obj) => obj.id))
         const interfacePorts: CellDLInterface[] = []
@@ -659,7 +659,7 @@ export class CellDLDiagram {
                 // Connection that crosses the compartment's boundary
                 const connectionPorts = this.#addConnectionToCompartment(
                     compartmentGroup,
-                    compartmentShape,
+                    compartmentIntersections,
                     objectIds,
                     <CellDLConnection>object
                 )
@@ -745,7 +745,7 @@ export class CellDLDiagram {
 
     #addConnectionToCompartment(
         compartmentGroup: SVGGElement,
-        compartmentShape: ShapeIntersections,
+        compartmentIntersections: ShapeIntersections,
         objectIds: Set<string>,
         connection: CellDLConnection
     ): CellDLInterface[] {
@@ -806,7 +806,7 @@ export class CellDLDiagram {
                 newElements.push(pathElement.svgElement)
                 continue
             }
-            const pathIntersections = compartmentShape.intersections(pathElement.svgElement)
+            const pathIntersections = compartmentIntersections.intersections(pathElement.svgElement)
             if (pathIntersections.length % 2 === 0) {
                 console.warn(`Path unexpectedly intersects selection boundary...`)
             } else {

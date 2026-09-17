@@ -291,7 +291,7 @@ export class CellDLEditor {
 // WIP               this.#showSelectedObjectInfo()
             } else if (targetId === CONTEXT_MENU.GROUP_OBJECTS) {
                 if (this.#boxMaker) {
-                    this.#boxMaker.makeCompartment()
+                    this.#boxMaker.makeComponentGroup()
                     this.#closeBoxMaker()
                 }
             }
