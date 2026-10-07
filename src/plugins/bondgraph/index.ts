@@ -19,7 +19,7 @@ limitations under the License.
 ******************************************************************************/
 /** biome-ignore-all lint/style/noNonNullAssertion: <keys exist in Map> */
 
-// WIP: import { ucum } from '@atomic-ehr/ucum'
+import { ucum } from '@atomic-ehr/ucum'
 
 //==============================================================================
 
@@ -684,6 +684,7 @@ export class BondgraphPlugin implements PluginInterface {
             } else if (itemDetails.itemId === BG_ELEMENT_VALUE_ITEM) {
                 const item = getItemProperty(celldlObject, itemDetails)
                 if (item) {
+                    item.units = pluginData.elementTemplate?.value?.units
                     items.push(item)
                     item.optional = false
                     if (pluginData.baseComponent.type === this.#transformNodeType) {
@@ -743,14 +744,11 @@ export class BondgraphPlugin implements PluginInterface {
         ).forEach((r) => {
             values.set(r.get('name')!.value, r.get('value')!.value)
         })
-
         group.items.forEach(item => {
             const itemVariable = item.itemId.split('/')
             const varName = itemVariable[1]!
             if (values.has(varName)) {
-                const valueUnits = values.get(varName)!.split(' ')
-                item.value = valueUnits[0]
-                item.units = valueUnits[1]
+                item.value = values.get(varName)
             }
         })
     }
@@ -772,7 +770,8 @@ export class BondgraphPlugin implements PluginInterface {
             let item = group.items[0]
             if (item) {
                 if (variable) {
-                    item.name = `${itemDefn.name} (${variable.units})`
+                    item.name = itemDefn.name
+                    item.units = variable.units
                     item.optional = false
                 } else {
                     item.optional = false
@@ -780,7 +779,8 @@ export class BondgraphPlugin implements PluginInterface {
                 }
             } else if (variable) {
                 item = Object.assign({}, itemDefn, {
-                    name: `${itemDefn.name} (${variable.units})`,
+                    name: itemDefn.name,
+                    units: variable.units,
                     optional: false,
                     value: itemDefn.defaultValue
                 })
@@ -969,6 +969,19 @@ export class BondgraphPlugin implements PluginInterface {
 
     //==================================
 
+    #valueWithUnits(value: string, defaultUnits: string) {
+        const valueFields = String(value).trim().split(/\s+/)
+        const valueString = valueFields[0] as string
+        let valueUnits = valueFields[1]
+        if (!valueUnits || ucum.convert(1, valueUnits, defaultUnits) === 1) {
+            valueUnits = defaultUnits
+        }
+        return {
+            value: valueString,
+            units: valueUnits
+        }
+    }
+
     #updateElementValue(value: ValueChange, celldlObject: CellDLObject) {
         const objectUri = celldlObject.uri.toString()
 
@@ -981,15 +994,16 @@ export class BondgraphPlugin implements PluginInterface {
             WHERE {
                 ${objectUri} bgf:hasValue ?value
             }`)
-        const newValue = String(value.newValue).trim()
         const elementTemplate = (<PluginData>celldlObject.pluginData(this.id)).elementTemplate
-        const variable = elementTemplate!.value
+        const units = elementTemplate?.value?.units as string
+        const newValue = String(value.newValue).trim()
         if (newValue) {
+            const valueUnits = this.#valueWithUnits(newValue, units)
             celldlObject.rdfStore.update(`${SPARQL_PREFIXES}
                 PREFIX : <${this.#currentDocumentUri}#>
 
                 INSERT DATA {
-                   ${objectUri} bgf:hasValue "${newValue} ${variable!.units}"^^cdt:ucum .
+                   ${objectUri} bgf:hasValue "${valueUnits.value} ${valueUnits.units}"^^cdt:ucum .
                 }
             `)
         }
@@ -1021,17 +1035,16 @@ export class BondgraphPlugin implements PluginInterface {
         if (!variable) {
             return
         }
+        const valueUnits = this.#valueWithUnits(value.newValue, variable.units)
         celldlObject.rdfStore.update(`${SPARQL_PREFIXES}
             PREFIX : <${this.#currentDocumentUri}#>
 
             INSERT DATA {
                 ${objectUri} ${predicate} _:pv .
                 _:pv bgf:varName "${varName}" ;
-                     bgf:hasValue "${value.newValue} ${variable.units}"^^cdt:ucum .
+                     bgf:hasValue "${valueUnits.value} ${valueUnits.units}"^^cdt:ucum .
             }
         `)
-// Check units...
-//            ucum.isConvertible(units1: string, units2: string)
     }
 
     //==================================

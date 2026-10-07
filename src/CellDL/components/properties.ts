@@ -98,14 +98,6 @@ export function getItemProperty(celldlObject: CellDLObject,
         }
         return undefined
     }
-    if (itemTemplate.numeric) {
-        const valueUnits = value.split(' ')
-        return {
-            ...itemTemplate,
-            value:  Number(valueUnits[0]),
-            units: valueUnits[1]
-        } as ItemDetails
-    }
     return {
         ...itemTemplate,
         value: value
