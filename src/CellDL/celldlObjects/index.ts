@@ -563,10 +563,6 @@ export class CellDLCompartment extends CellDLConnectedObject {
     #associatedComponents: CellDLMoveableObject[] = []
     #compartmentElement: CompartmentElement|undefined
 
-    get isAlignable() {
-        return false
-    }
-
     assignSvgElement(svgElement: SVGGraphicsElement, align: boolean) {
         this.#compartmentElement = new CompartmentElement(this, svgElement, {
             align: align,
