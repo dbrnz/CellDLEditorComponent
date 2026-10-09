@@ -46,7 +46,7 @@ useThemeCssVariables('slider')
 
 //==============================================================================
 
-const { pathStyle } = defineProps<{ pathStyle: string }>()
+const props = defineProps<{ pathStyle: string }>()
 
 const emit = defineEmits(['change'])
 
@@ -59,26 +59,19 @@ type StrokeFields = {
     dashScale?: number
 }
 
-const stroke = vue.ref<StrokeFields>({})
-
-function  makeColour(colour: string): string {
+function makeColour(colour: string): string {
     return new TinyColor(colour).toHexString()
 }
 
-function setStroke(strokeStyle: string) {
-    const strokeArray: string[] = strokeStyle.split(STYLE_STRING_FIELD_SEPARATOR)
-    stroke.value.colour = makeColour((strokeArray.at(0)) as string)
-    stroke.value.width = Number((strokeArray.at(1)) as string)
-    stroke.value.dashed = strokeArray.at(2) === '1'
-    stroke.value.dashScale = Number(strokeArray.at(3) as string)
-}
-
-setStroke(pathStyle)
-
-vue.watch(
-    () => pathStyle,
-    () => setStroke(pathStyle)
-)
+const stroke = vue.computed<StrokeFields>(() => {
+    const strokeArray: string[] = props.pathStyle.split(STYLE_STRING_FIELD_SEPARATOR)
+    return {
+        colour: makeColour((strokeArray.at(0)) as string),
+        width: Number((strokeArray.at(1)) as string),
+        dashed: strokeArray.at(2) === '1',
+        dashScale: Number(strokeArray.at(3) as string)
+    }
+})
 
 const minWidth = vue.ref<number>(0.5)
 const maxWidth = vue.ref<number>(10)
@@ -100,6 +93,7 @@ function emitChange() {
         String(stroke.value.dashScale)
     ].join(STYLE_STRING_FIELD_SEPARATOR))
 }
+
 //==============================================================================
 </script>
 

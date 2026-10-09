@@ -41,7 +41,7 @@
     .bottom-margin(v-else)
         FloatLabel(variant="on")
             InputText(
-                :modelValue="value"
+                :modelValue="inputValue"
                 @value-change="inputTextChange"
                 class="w-full"
                 size="small"
@@ -98,26 +98,19 @@ const discreteValue = vue.computed<locApi.IUiJsonDiscreteInputPossibleValue>({
     }
 })
 
-function scalerWithUnits(value: ValueType): string {
-    const valueFields = String(value).trim().split(/\s+/)
-    const valueString = valueFields[0] as string
-    let valueUnits = valueFields[1]
-    if (valueUnits && props.units && ucum.convert(1, valueUnits, props.units) === 1) {
-        valueUnits = undefined
-    }
-    return valueUnits ? `${valueString} ${valueUnits}` : valueString
-}
-
-const scalarValue = vue.ref<string>(scalerWithUnits(inputValue.value))
-
-vue.watch(
-    () => props.value,
-    () => {
-        if (scalarType) {
-            scalarValue.value = scalerWithUnits(inputValue.value)
+const scalarValue = vue.computed<string>(() => {
+    const value = String(inputValue.value).trim()
+    if (scalarType) {
+        const valueFields = value.split(/\s+/)
+        const valueString = valueFields[0] as string
+        let valueUnits = valueFields[1]
+        if (valueUnits && props.units && ucum.convert(1, valueUnits, props.units) === 1) {
+            valueUnits = undefined
         }
+        return valueUnits ? `${valueString} ${valueUnits}` : valueString
     }
-)
+    return value
+})
 
 // Some methods to handle a scalar value using an input text and a slider.
 
@@ -125,7 +118,6 @@ function emitChange(newValue: string) {
     void vue.nextTick().then(() => {
         if (scalarType && props.possibleValues === undefined) {
             inputValue.value = newValue
-            scalarValue.value = newValue
         }
         emits('change', props.itemId, oldValue, newValue)
         oldValue = newValue
@@ -141,7 +133,7 @@ interface ISelectChangeEvent {
 
 function selectChange(event: ISelectChangeEvent) {
     if (event.value.value !== oldValue) {
-        emitChange(event.value.value)
+        emitChange(String(event.value.value))
     }
 }
 

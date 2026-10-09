@@ -122,7 +122,7 @@ export class DrawingPlugin implements PluginInterface {
             properties.forEach(group => {
                 if (group.groupId === STYLE_GROUP_ID) {
                     if (celldlObject.celldlSvgElement) {
-                        group.styling = celldlObject.celldlSvgElement.getStyle()
+                        group.styling = { ...celldlObject.celldlSvgElement.getStyle() }
                     }
                 }
             })

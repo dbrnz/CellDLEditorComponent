@@ -5,31 +5,31 @@
         template(#content)
             div(v-if="!properties.objectId") Please select a single element or path.
             template(v-else)
-                .group(v-for="group in styleGroups")
+                .group(v-for="(group, groupIndex) in properties.groups")
                     FillStyle(
                         v-if="group.styling.fillStyle"
                         :fillStyle="group.styling.fillStyle"
-                        @change="updateFillStyle"
+                        @change="(fillStyle) => updateFillStyle(fillStyle, groupIndex)"
                     )
                     CornerStyle(
                         v-if="group.styling.cornerStyle"
                         :cornerStyle="group.styling.cornerStyle"
-                        @change="updateCornerStyle"
+                        @change="(cornerStyle) => updateCornerStyle(cornerStyle, groupIndex)"
                     )
                     TextStyle(
                         v-if="group.styling.textStyle"
                         :textStyle="group.styling.textStyle"
-                        @change="updateTextStyle"
+                        @change="(textStyle) => updateTextStyle(textStyle, groupIndex)"
                     )
                     PathStyle(
                         v-if="group.styling.pathStyle"
                         :pathStyle="group.styling.pathStyle"
-                        @change="updatePathStyle"
+                        @change="(pathStyle) => updatePathStyle(pathStyle, groupIndex)"
                     )
                     GapStyle(
                         v-if="group.styling.gapStyle"
                         :gapStyle="group.styling.gapStyle"
-                        @change="updateGapStyle"
+                        @change="(gapStyle) => updateGapStyle(gapStyle, groupIndex)"
                     )
 </template>
 
@@ -38,7 +38,8 @@
 
 import * as vue from 'vue'
 
-import type { ComponentProperties, PropertyGroup } from '#root/utils/editor-types'
+import type { ComponentProperties } from '#root/utils/editor-types'
+import type { Styling } from '#root/utils/styling'
 
 import CornerStyle from '../widgets/CornerStyle.vue'
 import FillStyle from '../widgets/FillStyle.vue'
@@ -55,58 +56,42 @@ const props = defineProps<{
     toolId: string
 }>()
 
+const properties = vue.inject(`${props.toolId}-componentProperties`) as vue.Ref<ComponentProperties>
+
 const emit = defineEmits(['style-event'])
 
 //==============================================================================
 
-const properties = vue.inject<vue.Ref<ComponentProperties>>(`${props.toolId}-componentProperties`)
+type StylingFields = 'cornerStyle' | 'fillStyle' | 'gapStyle' | 'pathStyle' | 'textStyle'
 
-const disabled = vue.ref<boolean>(properties?.value ? !properties.value.objectId : true)
-const styleGroups = vue.ref<PropertyGroup[]>([])
-
-// Need to make sure panel is closed when button is deactivated
-vue.watch(
-    () => properties?.value,
-    (newValue) => {
-        const visible = !!newValue?.objectId
-        if (visible) {
-            styleGroups.value = newValue.groups
+function updateStyling(field: StylingFields, value: string, groupIndex: number) {
+        const styling = properties.value.groups[groupIndex]?.styling
+        if (styling) {
+            const newStyling: Styling = {}
+            newStyling[field] = value
+            emit('style-event', props.toolId, newStyling)
+            styling[field] = value
         }
-        disabled.value = !visible
-    },
-    { deep: true }
-)
-
-//==============================================================================
-
-function updateCornerStyle(cornerStyle: string) {
-    void vue.nextTick().then(() => {
-        emit('style-event', props.toolId, { cornerStyle })
-    })
 }
 
-function updateFillStyle(fillStyle: string) {
-    void vue.nextTick().then(() => {
-        emit('style-event', props.toolId, { fillStyle })
-    })
+function updateCornerStyle(cornerStyle: string, groupIndex: number) {
+    updateStyling('cornerStyle', cornerStyle, groupIndex)
 }
 
-function updateGapStyle(gapStyle: string) {
-    void vue.nextTick().then(() => {
-        emit('style-event', props.toolId, { gapStyle })
-    })
+function updateFillStyle(fillStyle: string, groupIndex: number) {
+    updateStyling('fillStyle', fillStyle, groupIndex)
 }
 
-function updatePathStyle(pathStyle: string) {
-    void vue.nextTick().then(() => {
-        emit('style-event', props.toolId, { pathStyle })
-    })
+function updateGapStyle(gapStyle: string, groupIndex: number) {
+    updateStyling('gapStyle', gapStyle, groupIndex)
 }
 
-function updateTextStyle(textStyle: string) {
-    void vue.nextTick().then(() => {
-        emit('style-event', props.toolId, { textStyle })
-    })
+function updatePathStyle(pathStyle: string, groupIndex: number) {
+    updateStyling('pathStyle', pathStyle, groupIndex)
+}
+
+function updateTextStyle(textStyle: string, groupIndex: number) {
+    updateStyling('textStyle', textStyle, groupIndex)
 }
 
 //==============================================================================

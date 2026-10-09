@@ -698,7 +698,7 @@ export class BondgraphPlugin implements PluginInterface {
 
     #loadElementStyling(celldlObject: CellDLObject, componentGroup: PropertyGroup, connection: boolean) {
         if (connection) {
-            componentGroup.styling = celldlObject.celldlSvgElement!.getStyle()
+            componentGroup.styling = { ...celldlObject.celldlSvgElement?.getStyle() }
         } else {
             const pluginData = (<PluginData>celldlObject.pluginData(this.id))
             if (!('fillString' in pluginData)) {
