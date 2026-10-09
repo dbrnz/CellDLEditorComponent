@@ -634,13 +634,13 @@ export class BondgraphPlugin implements PluginInterface {
             if (!celldlObject.isConnection) {
                 const pluginData = (<PluginData>celldlObject.pluginData(this.id))
                 componentProperties.forEach(group => {
-                   if (BG_PROPERTY_GROUP_IDS.includes(group.groupId)) {
+                    if (BG_PROPERTY_GROUP_IDS.includes(group.groupId)) {
                         const groupTemplate = this.#elementPropertiesTemplate.get(group.groupId)
                         if (groupTemplate) {
                             if (group.groupId === BG_PROPERTY_GROUP_ID.ElementProperties) {
-                                this.#loadElementProperties(celldlObject, group, groupTemplate)
+                                this.#loadElementProperties(celldlObject, group, groupTemplate, pluginData)
                             } else if (group.groupId === BG_PROPERTY_GROUP_ID.ElementInitialValue) {
-                                this.#loadElementProperties(celldlObject, group, groupTemplate)
+                                this.#loadElementProperties(celldlObject, group, groupTemplate, pluginData)
                             } else if (pluginData.elementTemplate) {
                                 if (group.groupId === BG_PROPERTY_GROUP_ID.ElementParameters) {
                                     this.#setVariableItems(pluginData.elementTemplate.parameters, group)
@@ -663,8 +663,7 @@ export class BondgraphPlugin implements PluginInterface {
         }
     }
 
-    #loadElementProperties(celldlObject: CellDLObject, componentGroup: PropertyGroup, groupTemplate: IndexedPropertyGroup) {
-        const pluginData = <PluginData>celldlObject.pluginData(this.id)
+    #loadElementProperties(celldlObject: CellDLObject, componentGroup: PropertyGroup, groupTemplate: IndexedPropertyGroup, pluginData: PluginData) {
         groupTemplate.items.forEach((itemDetails: ItemDetails) => {
             const items: ItemDetails[] = []
             if (itemDetails.itemId === BG_ELEMENT_TYPE_ITEM) {
@@ -702,7 +701,7 @@ export class BondgraphPlugin implements PluginInterface {
         } else {
             const pluginData = (<PluginData>celldlObject.pluginData(this.id))
             if (!('fillString' in pluginData)) {
-                pluginData.fillString = celldlObject.celldlSvgElement!.getStyle().fillStyle // getFillString(celldlObject.celldlSvgElement!.svgElement)
+                pluginData.fillString = celldlObject.celldlSvgElement?.getStyle().fillStyle
             }
             componentGroup.styling = {
                 fillStyle: pluginData.fillString
@@ -791,12 +790,12 @@ export class BondgraphPlugin implements PluginInterface {
                 const newValue = String(item.value).trim()
                 if (newValue && elementTemplate) {
                     const objectUri = celldlObject.uri.toString()
-                    const variable = elementTemplate!.value
+                    const variable = elementTemplate?.value
                     celldlObject.rdfStore.update(`${SPARQL_PREFIXES}
                         PREFIX : <${this.#currentDocumentUri}#>
 
                         INSERT DATA {
-                           ${objectUri} bgf:hasValue "${newValue} ${variable!.units}"^^cdt:ucum .
+                           ${objectUri} bgf:hasValue "${newValue} ${variable?.units}"^^cdt:ucum .
                         }
                     `)
                 }
@@ -1357,7 +1356,7 @@ export class BondgraphPlugin implements PluginInterface {
                     value: { name: 'k', units: '', value: '1' },
                 }
                 this.#elementTemplates.set(elementTemplate.type, elementTemplate)
-                this.#baseComponentToElementTemplates.get(component.type)!.push(elementTemplate)
+                this.#baseComponentToElementTemplates.get(component.type)?.push(elementTemplate)
                 continue
             }
             this.#query(`

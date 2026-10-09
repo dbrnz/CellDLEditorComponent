@@ -155,7 +155,7 @@ export class ObjectPropertiesPanel {
         for (const group of this.#componentPropertiesRef.value.groups) {
             group.items = []
         }
-        vue.provide<vue.Ref<ComponentProperties>>(`${panelId}-componentProperties`, this.#componentPropertiesRef)
+        vue.provide(`${panelId}-componentProperties`, this.#componentPropertiesRef)
     }
 
     get panelId() {

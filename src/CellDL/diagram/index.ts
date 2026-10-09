@@ -335,7 +335,7 @@ export class CellDLDiagram {
             this.#defsElement?.removeChild(defn)
         }
         this.#defsElement?.insertAdjacentHTML('beforeend', definition)
-        const element = this.#defsElement?.lastChild
+        const element = this.#defsElement?.lastChild as SVGElement
         if (element) {
             element.setAttribute('id', definitionId)
         }
