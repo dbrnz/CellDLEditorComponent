@@ -962,6 +962,10 @@ export class CellDLDiagram {
         return false
     }
 
+    setPropertiesPanelObject(celldlObject: CellDLObject|undefined) {
+        this.#celldlEditor.setPropertiesPanelObject(celldlObject)
+    }
+
     #celldlObjectFromRdf<T extends CellDLObject>(CellDLClass: Constructor<T>, subject: $rdf.SubjectType): T {
         const metadata = this.#kb.metadataPropertiesForSubject(subject)
         const objectTemplate = componentLibraryPlugin.getObjectTemplate(subject, metadata, this.#kb)

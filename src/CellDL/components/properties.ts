@@ -165,7 +165,7 @@ export class ObjectPropertiesPanel {
     setObjectProperties(celldlObject: CellDLObject|undefined) {
         if (!celldlObject) {
             this.#componentPropertiesRef.value.objectId = undefined
-        } else if (celldlObject.id !== this.#componentPropertiesRef.value.objectId) {
+        } else {
             this.#componentPropertiesRef.value.objectId = celldlObject.id
             for (const group of this.#componentPropertiesRef.value.groups) {
                 group.items.length = 0
