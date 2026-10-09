@@ -73,7 +73,6 @@ export class DrawingPlugin implements PluginInterface {
     openDiagram(_uri: string, _rdfStore: MetadataStore) {
     }
 
-
     addPluginMetadataToStore(_rdfStore: MetadataStore) {
     }
 
@@ -130,7 +129,7 @@ export class DrawingPlugin implements PluginInterface {
         }
     }
 
-    async updateObjectProperties(celldlObject: CellDLObject, panelId: PANEL_ID, itemId: string, value: ValueChange,
+    async updateObjectProperties(celldlObject: CellDLObject, _panelId: PANEL_ID, itemId: string, _value: ValueChange,
                                  _componentProperties: PropertyGroup[]) {
         celldlObject.celldlSvgElement?.updateElement()
         if (itemId === RDFS.uri('label').value) {
