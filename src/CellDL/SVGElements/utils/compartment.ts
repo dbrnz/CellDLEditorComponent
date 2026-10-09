@@ -11,6 +11,7 @@ import {
     MEMBRANE_DASH,
     MEMBRANE_GAP,
     MEMBRANE_STROKE_WIDTH,
+    REGION_BACKGROUND,
     type Styling,
     STYLE_STRING_FIELD_SEPARATOR
 } from '#root/utils/styling'
@@ -35,11 +36,20 @@ type CompartmentStyling = {
 
 const DEFAULT_COMPARTMENT_STYLE: CompartmentStyling = {
     cornerRadius: MEMBRANE_CORNER_RADIUS,
-    fill: [COMPARTMENT_BACKGROUND],      // WIP -- gradient fill
+    fill: [COMPARTMENT_BACKGROUND],
     strokeGap: MEMBRANE_GAP,
     strokeColour: MEMBRANE_COLOUR,
     strokeDashed: false,
     strokeWidth: MEMBRANE_STROKE_WIDTH
+}
+
+const DEFAULT_REGION_STYLE: CompartmentStyling = {
+    cornerRadius: 0,
+    fill: [REGION_BACKGROUND],
+    strokeGap: 0,
+    strokeColour: 'none',
+    strokeDashed: false,
+    strokeWidth: 0
 }
 
 //==============================================================================
@@ -54,8 +64,8 @@ const PADDING = 24
 
 //==============================================================================
 
-export function createCompartmentSvgElement(id: string, topLeft: PointLike, bottomRight: PointLike): SVGGElement {
-    const styling = DEFAULT_COMPARTMENT_STYLE
+export function createCompartmentSvgElement(id: string, topLeft: PointLike, bottomRight: PointLike, isRegion?: boolean): SVGGElement {
+    const styling = isRegion ? DEFAULT_REGION_STYLE : DEFAULT_COMPARTMENT_STYLE
     const svgElement = document.createElementNS(SVG_URI, 'g')
     svgElement.id = id
     svgElement.insertAdjacentHTML('beforeend', createRectAsString(topLeft, bottomRight, styling, styling.strokeGap/2))
@@ -71,8 +81,11 @@ export function createCompartmentSvgElement(id: string, topLeft: PointLike, bott
 function createRectAsString(topLeft: PointLike, bottomRight: PointLike,
                             styling: CompartmentStyling, offset: number=0): string {
     const attributes: Record<string, string> = {
-        stroke: styling.strokeColour,
-        'stroke-width': String(styling.strokeWidth)
+        stroke: styling.strokeColour
+    }
+    if (styling.strokeWidth > 0 && styling.strokeColour !== 'none') {
+        attributes.stroke = styling.strokeColour
+        attributes['stroke-width'] = String(styling.strokeWidth)
     }
     const radius = styling.cornerRadius + offset
     if (radius > 0) {
@@ -83,7 +96,7 @@ function createRectAsString(topLeft: PointLike, bottomRight: PointLike,
     }
     // Background only when a single compartment boundary or this is the innermost boundary
     if (offset <= 0) {
-        attributes.fill = COMPARTMENT_BACKGROUND
+        attributes.fill = styling.fill[0] as string
         attributes['fill-opacity'] = '0.8'
     } else {
         attributes.fill = 'none'
@@ -267,16 +280,18 @@ export class Compartment {
     #svgElement: SVGGElement
     #textElement: TextElement
 
-    constructor(celldlObject: CellDLObject) {
+    constructor(celldlObject: CellDLObject, isRegion?: boolean) {
         this.#celldlObject = celldlObject
         this.#celldlDiagram = celldlObject.celldlDiagram
         this.#objectId = celldlObject.id
         this.#svgElement = celldlObject.svgElement as SVGGElement
         const innerRects = [...this.#svgElement.querySelectorAll('rect').values()]
         this.#boundary0 = innerRects[0] as SVGRectElement
-        this.#boundary1 = innerRects[1]
-        const strokeGap = Number(this.#svgElement.getAttribute('data-stroke-gap')) || 0
-        this.#styling.gapStyle = String(strokeGap)
+        const strokeGap = isRegion ? 0 : Number(this.#svgElement.getAttribute('data-stroke-gap')) || 0
+        if (!isRegion) {
+            this.#boundary1 = innerRects[1]
+            this.#styling.gapStyle = String(strokeGap)
+        }
         let fillString = this.#svgElement.getAttribute('data-fill-style')
         if (!fillString) {
             if (innerRects.length) {
@@ -291,21 +306,22 @@ export class Compartment {
             } else if (fillString.startsWith('url(') && fillString.endsWith(')')) {
                 fillString = 'yellow'
             }
-            this.#styling.fillStyle = fillString
         }
-        let cornerRadius = 0
-        if (innerRects.length) {
-            this.#styling.pathStyle = getStrokeString(this.#boundary0 as SVGRectElement, {
-                colour: MEMBRANE_COLOUR,
-                width: MEMBRANE_STROKE_WIDTH,
+        this.#styling.fillStyle = fillString
+        if (!isRegion && innerRects.length) {
+            let cornerRadius = 0
+            this.#styling.pathStyle = getStrokeString(this.#boundary0 as SVGRectElement,
+            {
+                colour: DEFAULT_COMPARTMENT_STYLE.strokeColour,  //
+                width: DEFAULT_COMPARTMENT_STYLE.strokeWidth,
                 dashScale: MEMBRANE_DASH
             })
             cornerRadius = Number(this.#boundary0.getAttribute('rx') as string)
             if (this.#boundary1) {
                 cornerRadius = (cornerRadius + Number(this.#boundary1.getAttribute('rx') as string))/2
             }
+            this.#styling.cornerStyle = String(cornerRadius)
         }
-        this.#styling.cornerStyle = String(cornerRadius)
         this.#textElement = new TextElement(this.#svgElement, getRectDimensions(this.#boundary0))
     }
 

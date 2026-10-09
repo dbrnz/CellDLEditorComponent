@@ -19,6 +19,7 @@ limitations under the License.
 ******************************************************************************/
 
 import type {
+    CellDLAnnotation,
     CellDLCompartment,
     CellDLConnectedObject,
     CellDLObject
@@ -126,11 +127,11 @@ export class BoxMaker {
                 this.#updateRect(this.#doubleBoundary[1] as SVGRectElement, resized, -offset)
             }
         } else {
-            this.#selectionRect = this.#createRect('selection-rect')
+            this.#selectionRect = this.#createRect('draw-box-rect')
             this.#selectionRect.id = SELECTION_BOX_ID
             if (this.#doubleWalled) {
-                this.#doubleBoundary[0] = this.#createRect('selection-rect-outer',  offset)
-                this.#doubleBoundary[1] = this.#createRect('selection-rect-inner', -offset)
+                this.#doubleBoundary[0] = this.#createRect('draw-compartment-outer',  offset)
+                this.#doubleBoundary[1] = this.#createRect('draw-compartment-inner', -offset)
             }
         }
         this.#setSelectedObjects()
@@ -143,8 +144,8 @@ export class BoxMaker {
              && point.y < this.#bottomRight.y)
     }
 
-    makeCompartment(): CellDLCompartment {
-        return this.#editor.celldlDiagram?.makeCompartment(this.bounds) as CellDLCompartment
+    makeCompartmentRegion(isRegion?: boolean): CellDLCompartment|CellDLAnnotation|undefined {
+        return this.#editor.celldlDiagram?.makeCompartmentRegion(this.bounds, isRegion)
     }
 
     groupComponents() {

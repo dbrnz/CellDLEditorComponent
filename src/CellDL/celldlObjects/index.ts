@@ -395,8 +395,18 @@ export class CellDLAnnotation extends CellDLMoveableObject {
     static celldlStyleClass = CELLDL_STYLE_CLASS.Annotation
     static celldlTypeName = 'Annotation'
 
+    #annotationElement: CompartmentElement|undefined
+
     get hasEditGuides() {
         return true
+    }
+
+    assignSvgElement(svgElement: SVGGraphicsElement, align: boolean) {
+        this.#annotationElement = new CompartmentElement(this, svgElement, {
+            align: align,
+            gridAligned: this.isAlignable,
+            isRegion: true
+        })
     }
 }
 
@@ -558,7 +568,11 @@ export class CellDLCompartment extends CellDLConnectedObject {
     }
 
     assignSvgElement(svgElement: SVGGraphicsElement, align: boolean) {
-        this.#compartmentElement = new CompartmentElement(this, svgElement, this.isAlignable, align)
+        this.#compartmentElement = new CompartmentElement(this, svgElement, {
+            align: align,
+            gridAligned: this.isAlignable,
+            isRegion: false
+        })
         if (this.celldlSvgElement) {
             for (const object of this.celldlDiagram.objectsContainedIn(this.celldlSvgElement.bounds)) {
                 const celldlObject = object.object

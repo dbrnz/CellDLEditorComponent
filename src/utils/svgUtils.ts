@@ -401,7 +401,11 @@ export function setStrokeFromString(svgElement: SVGGraphicsElement, strokeString
     if (strokeArray.length >= 4) {
         const strokeWidth = Number(strokeArray.at(1) as string)
         svgElement.setAttribute('stroke', strokeArray.at(0) as string)
-        svgElement.setAttribute('stroke-width', String(strokeWidth))
+        if (strokeWidth > 0) {
+            svgElement.setAttribute('stroke-width', String(strokeWidth))
+        } else {
+            svgElement.removeAttribute('stroke-width')
+        }
         const dashScale = Number(strokeArray.at(3) as string)
         if (strokeArray.at(2) === '1' && dashScale > 0) {
             svgElement.setAttribute('stroke-dasharray', String(dashScale*strokeWidth))

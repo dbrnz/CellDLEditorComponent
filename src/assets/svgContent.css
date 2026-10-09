@@ -96,19 +96,19 @@
 #svg-container .active.selected:not(.celldl-Connection) {
     stroke: var(--active-selected) !important;
 }
-#svg-container .selection-rect {
+#svg-container .draw-box-rect {
     fill: #ccc;
-    fill-opacity: 0.2;
+    fill-opacity: 0.4;
     stroke: var(--p-surface-0);
     stroke-width: 0.3;
 }
-#svg-container .selection-rect-outer {
+#svg-container .draw-compartment-outer {
     fill: none;
     stroke: var(--editor-membrane-colour);
     stroke-width: var(--editor-membrane-width);
     rx: calc(var(--editor-membrane-radius) + var(--editor-membrane-gap)/2)
 }
-#svg-container .selection-rect-inner {
+#svg-container .draw-compartment-inner {
     fill: var(--editor-compartment-fill);
     stroke: var(--editor-membrane-colour);
     stroke-width: var(--editor-membrane-width);

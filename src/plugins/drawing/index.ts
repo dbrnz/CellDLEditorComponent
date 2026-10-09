@@ -77,7 +77,7 @@ export class DrawingPlugin implements PluginInterface {
     }
 
     getPluginData(celldlObject: CellDLObject): object {
-        if (celldlObject.isCompartment) {
+        if (celldlObject.isCompartment || celldlObject.isAnnotation) {
             return {
                 managed: true
             }

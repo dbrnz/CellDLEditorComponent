@@ -90,7 +90,8 @@ enum EDITOR_MODE {
     Selecting = 'SELECTING',
     PathDrawing = 'DRAW-PATH',
     AddingComponent = 'ADD-COMPONENT',
-    DrawCompartment = 'DRAW-COMPARTMENT'
+    DrawCompartment = 'DRAW-COMPARTMENT',
+    DrawRegion = 'DRAW-REGION'
 }
 
 const DEFAULT_EDITOR_MODE = EDITOR_MODE.Selecting
@@ -394,7 +395,8 @@ export class CellDLEditor {
 
     #setDefaultCursor() {
         if (this.#editorMode === EDITOR_MODE.PathDrawing
-         || this.#editorMode === EDITOR_MODE.DrawCompartment) {
+         || this.#editorMode === EDITOR_MODE.DrawCompartment
+         || this.#editorMode === EDITOR_MODE.DrawRegion) {
             this.#svgDiagram?.style.setProperty('cursor', 'crosshair')
         } else {
             this.#svgDiagram?.style.removeProperty('cursor')
@@ -644,8 +646,10 @@ export class CellDLEditor {
         // A drawing tool has been selected
 
         const tool = (<CustomEvent>event).detail.tool
-        if (tool === 'draw-closed-compartment') { // draw-background-region
+        if (tool === 'draw-closed-compartment') {
             this.#changeMode(EDITOR_MODE.DrawCompartment)
+        } else if (tool === 'draw-background-region') {
+            this.#changeMode(EDITOR_MODE.DrawRegion)
         }
 
     }
@@ -673,9 +677,9 @@ export class CellDLEditor {
         }
     }
 
-    #addCompartment() {
+    #addCompartmentRegion(isRegion?: boolean) {
         if (this.#boxMaker) {
-            const celldlObject = this.#boxMaker.makeCompartment()
+            const celldlObject = this.#boxMaker.makeCompartmentRegion(isRegion)
             this.#unsetActiveObjects()
             if (celldlObject) {
                 // Select newly added object
@@ -864,7 +868,8 @@ export class CellDLEditor {
                     this.#setActiveObjects([currentObject])
                 }
             }
-        } else if (this.#editorMode === EDITOR_MODE.DrawCompartment) {
+        } else if (this.#editorMode === EDITOR_MODE.DrawCompartment
+                || this.#editorMode === EDITOR_MODE.DrawRegion) {
             if (currentObject) {
                 element.style.removeProperty('cursor')
             }
@@ -912,6 +917,7 @@ export class CellDLEditor {
         if (event.button === 2
          || (!event.shiftKey
           && this.#editorMode !== EDITOR_MODE.DrawCompartment
+          && this.#editorMode !== EDITOR_MODE.DrawRegion
           && this.#notDiagramElement(element))) {
             this.#svgDiagram?.style.removeProperty('cursor')
             this.#container?.style.setProperty('cursor', 'grab')
@@ -967,12 +973,13 @@ export class CellDLEditor {
                     this.moved = false
                 }
             }
-        } else if (this.#editorMode === EDITOR_MODE.DrawCompartment) {
+        } else if (this.#editorMode === EDITOR_MODE.DrawCompartment
+                || this.#editorMode === EDITOR_MODE.DrawRegion) {
             if (this.#boxMaker) {
                 this.#boxMaker.pointerEvent(event, svgPoint)
             } else {
                 this.unsetSelectedObjects()
-                this.#boxMaker = new BoxMaker(this, svgPoint, true)
+                this.#boxMaker = new BoxMaker(this, svgPoint, this.#editorMode === EDITOR_MODE.DrawCompartment)
                 this.#boxMaking = true
             }
         }
@@ -1006,7 +1013,8 @@ export class CellDLEditor {
                 this.#boxMaker.updateSelectedObjects()
             }
         } else if (this.#editorMode === EDITOR_MODE.Selecting
-                || this.#editorMode === EDITOR_MODE.DrawCompartment) {
+                || this.#editorMode === EDITOR_MODE.DrawCompartment
+                || this.#editorMode === EDITOR_MODE.DrawRegion) {
             if (this.#boxMaker) {
                 this.#boxMaker.pointerEvent(event, svgPoint)
             }
@@ -1050,11 +1058,13 @@ export class CellDLEditor {
                     this.#moveUndoState = null
                 }
             } else if (this.#editorMode === EDITOR_MODE.Selecting
-                    || this.#editorMode === EDITOR_MODE.DrawCompartment) {
+                    || this.#editorMode === EDITOR_MODE.DrawCompartment
+                    || this.#editorMode === EDITOR_MODE.DrawRegion) {
                 if (this.#boxMaker) {
-                    if (this.#editorMode === EDITOR_MODE.DrawCompartment) {
+                    if (this.#editorMode === EDITOR_MODE.DrawCompartment
+                     || this.#editorMode === EDITOR_MODE.DrawRegion) {
                         this.#boxMaker.pointerEvent(event, svgPoint)
-                        this.#addCompartment()
+                        this.#addCompartmentRegion(this.#editorMode === EDITOR_MODE.DrawRegion)
                         this.#closeBoxMaker()
                     } else if (!this.#boxMaker.pointerEvent(event, svgPoint)) {
                         this.#closeBoxMaker()

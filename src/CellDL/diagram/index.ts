@@ -661,25 +661,26 @@ export class CellDLDiagram {
         return connection
     }
 
-    makeCompartment(bounds: Bounds): CellDLCompartment {
+    makeCompartmentRegion(bounds: Bounds, isRegion?: boolean): CellDLCompartment|CellDLAnnotation {
         const cornerPoints = bounds.asPoints()
         const svgElement = createCompartmentSvgElement(this.#nextIdentifier(),
-                                                cornerPoints[0], cornerPoints[1])
-        const compartmentObject = this.#addNewObject(
+                                                       cornerPoints[0], cornerPoints[1],
+                                                       isRegion)
+        const object = this.#addNewObject(
             svgElement, {
-                CellDLClass: CellDLCompartment,
+                CellDLClass: isRegion ? CellDLAnnotation : CellDLCompartment,
                 metadataProperties: MetadataPropertiesMap.fromProperties([])
             },
             {
                 atBack: true,
                 hasId: true
             }
-        ) as CellDLCompartment
-        if (compartmentObject) {
-            this.#addMoveableObject(compartmentObject)
+        ) as CellDLCompartment|CellDLAnnotation
+        if (object) {
+            this.#addMoveableObject(object)
         }
         notifyChanges()
-        return compartmentObject
+        return object
     }
 
     groupComponents(bounds: Bounds, objects: CellDLObject[]): CellDLComponent {
