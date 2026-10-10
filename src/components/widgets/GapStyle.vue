@@ -10,7 +10,6 @@
                 @change="emitChange"
             )
             label Membrane gap (px)
-        Divider
 </template>
 
 <script setup lang="ts">

@@ -26,7 +26,6 @@
                 binary
                 @change="emitChange"
             )
-        Divider
 </template>
 
 <script setup lang="ts">

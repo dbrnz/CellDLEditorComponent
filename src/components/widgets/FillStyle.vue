@@ -65,8 +65,6 @@
                         value="V"
                         @change="emitChange"
                     )
-        Divider
-        // middle colour??
 </template>
 
 <script setup lang="ts">

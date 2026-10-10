@@ -5,32 +5,43 @@
         template(#content)
             div(v-if="!properties.objectId") Please select a single element or path.
             template(v-else)
-                .group(v-for="(group, groupIndex) in properties.groups")
-                    FillStyle(
-                        v-if="group.styling.fillStyle"
-                        :fillStyle="group.styling.fillStyle"
-                        @change="(fillStyle) => updateFillStyle(fillStyle, groupIndex)"
-                    )
-                    CornerStyle(
-                        v-if="group.styling.cornerStyle"
-                        :cornerStyle="group.styling.cornerStyle"
-                        @change="(cornerStyle) => updateCornerStyle(cornerStyle, groupIndex)"
-                    )
-                    TextStyle(
-                        v-if="group.styling.textStyle"
-                        :textStyle="group.styling.textStyle"
-                        @change="(textStyle) => updateTextStyle(textStyle, groupIndex)"
-                    )
-                    PathStyle(
-                        v-if="group.styling.pathStyle"
-                        :pathStyle="group.styling.pathStyle"
-                        @change="(pathStyle) => updatePathStyle(pathStyle, groupIndex)"
-                    )
-                    GapStyle(
-                        v-if="group.styling.gapStyle"
-                        :gapStyle="group.styling.gapStyle"
-                        @change="(gapStyle) => updateGapStyle(gapStyle, groupIndex)"
-                    )
+                Accordion(multiple=true :value="defaultPanel")
+                    .group(v-for="(group, groupIndex) in properties.groups")
+                        AccordionPanel(v-if="group.styling.fillStyle" value="fill")
+                            AccordionHeader(:pt="{ root: { class: 'left-icon' } }") Fill
+                            AccordionContent
+                                FillStyle(
+                                    :fillStyle="group.styling.fillStyle"
+                                    @change="(fillStyle) => updateFillStyle(fillStyle, groupIndex)"
+                                )
+                        AccordionPanel(v-if="group.styling.cornerStyle" value="corner")
+                            AccordionHeader(:pt="{ root: { class: 'left-icon' } }") Corner
+                            AccordionContent
+                                CornerStyle(
+                                    :cornerStyle="group.styling.cornerStyle"
+                                    @change="(cornerStyle) => updateCornerStyle(cornerStyle, groupIndex)"
+                                )
+                        AccordionPanel(v-if="group.styling.textStyle" value="text")
+                            AccordionHeader(:pt="{ root: { class: 'left-icon' } }") Text
+                            AccordionContent
+                                TextStyle(
+                                    :textStyle="group.styling.textStyle"
+                                    @change="(textStyle) => updateTextStyle(textStyle, groupIndex)"
+                                )
+                        AccordionPanel(v-if="group.styling.pathStyle" value="stroke")
+                            AccordionHeader(:pt="{ root: { class: 'left-icon' } }") Stroke
+                            AccordionContent
+                                PathStyle(
+                                    :pathStyle="group.styling.pathStyle"
+                                    @change="(pathStyle) => updatePathStyle(pathStyle, groupIndex)"
+                                )
+                        AccordionPanel(v-if="group.styling.gapStyle" value="membrane")
+                            AccordionHeader(:pt="{ root: { class: 'left-icon' } }") Membrane
+                            AccordionContent
+                                GapStyle(
+                                    :gapStyle="group.styling.gapStyle"
+                                    @change="(gapStyle) => updateGapStyle(gapStyle, groupIndex)"
+                                )
 </template>
 
 <script setup lang="ts">
@@ -59,6 +70,50 @@ const props = defineProps<{
 const properties = vue.inject(`${props.toolId}-componentProperties`) as vue.Ref<ComponentProperties>
 
 const emit = defineEmits(['style-event'])
+
+//==============================================================================
+
+const defaultPanel = vue.computed<string[]>(() => {
+    let defaultPanel: string|undefined
+    for (const group of properties.value.groups) {
+        if (group.styling?.fillStyle) {
+            if (!defaultPanel) {
+                defaultPanel = 'fill'
+            } else if (defaultPanel !== 'fill') {
+                return []
+            }
+        }
+        if (group.styling?.cornerStyle) {
+            if (!defaultPanel) {
+                defaultPanel = 'corner'
+            } else if (defaultPanel !== 'corner') {
+                return []
+            }
+        }
+        if (group.styling?.textStyle) {
+            if (!defaultPanel) {
+                defaultPanel = 'text'
+            } else if (defaultPanel !== 'text') {
+                return []
+            }
+        }
+        if (group.styling?.pathStyle) {
+            if (!defaultPanel) {
+                defaultPanel = 'stroke'
+            } else if (defaultPanel !== 'stroke') {
+                return []
+            }
+        }
+        if (group.styling?.gapStyle) {
+            if (!defaultPanel) {
+                defaultPanel = 'membrane'
+            } else if (defaultPanel !== 'membrane') {
+                return []
+            }
+        }
+    }
+    return defaultPanel ? [defaultPanel] : []
+})
 
 //==============================================================================
 
@@ -96,3 +151,25 @@ function updateTextStyle(textStyle: string, groupIndex: number) {
 
 //==============================================================================
 </script>
+
+<style scoped>
+/* Move the toggle icon to the left */
+:deep(.left-icon) {
+    display: flex;
+    flex-direction: row-reverse;
+    justify-content: start;
+    column-gap: 10px;
+    padding-bottom: 10px;
+}
+
+.p-accordionheader {
+    padding-left: 0;
+}
+
+.p-accordionpanel {
+    border-bottom-width: 4px;
+    padding-top: 0;
+    padding-bottom: 10px;
+}
+
+</style>
