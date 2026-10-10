@@ -1,19 +1,19 @@
 <template lang="pug">
     .card
         InputWidget(
-            v-model="vAlignValue"
-            itemId="vAlign"
-            name="Text vertical alignment"
-            :value="vAlignValue"
-            :possibleValues="vAlignmentItems"
-            @change="emitChange"
-        )
-        InputWidget(
             v-model="hAlignValue"
             itemId="hAlign"
             name="Text horizontal alignment"
             :value="hAlignValue"
             :possibleValues="hAlignmentItems"
+            @change="emitChange"
+        )
+        InputWidget(
+            v-model="vAlignValue"
+            itemId="vAlign"
+            name="Text vertical alignment"
+            :value="vAlignValue"
+            :possibleValues="vAlignmentItems"
             @change="emitChange"
         )
 </template>
