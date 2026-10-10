@@ -120,13 +120,13 @@ const defaultPanel = vue.computed<string[]>(() => {
 type StylingFields = 'cornerStyle' | 'fillStyle' | 'gapStyle' | 'pathStyle' | 'textStyle'
 
 function updateStyling(field: StylingFields, value: string, groupIndex: number) {
-        const styling = properties.value.groups[groupIndex]?.styling
-        if (styling) {
-            const newStyling: Styling = {}
-            newStyling[field] = value
-            emit('style-event', props.toolId, newStyling)
-            styling[field] = value
-        }
+    const styling = properties.value.groups[groupIndex]?.styling
+    if (styling) {
+        const newStyling: Styling = {}
+        newStyling[field] = value
+        emit('style-event', props.toolId, newStyling)
+        styling[field] = value
+    }
 }
 
 function updateCornerStyle(cornerStyle: string, groupIndex: number) {
