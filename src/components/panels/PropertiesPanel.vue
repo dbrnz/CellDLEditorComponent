@@ -3,25 +3,26 @@
         template(#title)
             div {{ title }}
         template(#content)
-            div(
-                v-if="!properties.objectId"
-            ) Please select a single element or path.
-            template(v-else)
-                .group(v-for="(group, groupIndex) in properties.groups")
-                    InputWidget(
-                        v-for="(item, itemIndex) in group.items"
-                        v-model="item.value"
-                        :itemId="item.itemId"
-                        :name="item.name"
-                        :value="item.value"
-                        :units="item.units"
-                        :numeric="item.numeric"
-                        :maximumValue="item.maximumValue"
-                        :minimumValue="item.minimumValue"
-                        :possibleValues="item.possibleValues"
-                        :stepValue="item.stepValue"
-                        @change="(itemId, oldValue, newValue) => updateProperties(itemId, oldValue, newValue, groupIndex, itemIndex)"
-                    )
+            div#panel-content
+                div(
+                    v-if="!properties.objectId"
+                ) Please select a single element or path.
+                template(v-else)
+                    .group(v-for="(group, groupIndex) in properties.groups")
+                        InputWidget(
+                            v-for="(item, itemIndex) in group.items"
+                            v-model="item.value"
+                            :itemId="item.itemId"
+                            :name="item.name"
+                            :value="item.value"
+                            :units="item.units"
+                            :numeric="item.numeric"
+                            :maximumValue="item.maximumValue"
+                            :minimumValue="item.minimumValue"
+                            :possibleValues="item.possibleValues"
+                            :stepValue="item.stepValue"
+                            @change="(itemId, oldValue, newValue) => updateProperties(itemId, oldValue, newValue, groupIndex, itemIndex)"
+                        )
 </template>
 <script setup lang="ts">
 import * as vue from 'vue'
@@ -68,6 +69,12 @@ function updateProperties(itemId: string, oldValue: number|string, newValue: num
 
 //==============================================================================
 </script>
+
+<style scoped>
+#panel-content {
+    margin-top: 20px;
+}
+</style>
 
 <style>
 /* Allow for FloatLabel text of InputWidget */

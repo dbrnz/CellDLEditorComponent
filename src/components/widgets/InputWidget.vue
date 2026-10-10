@@ -207,7 +207,7 @@ function inputTextKeyPress(event: KeyboardEvent) {
 
 <style scoped>
     .bottom-margin {
-        margin-bottom: 30px;
+        margin-bottom: 20px;
     }
     .emphasise {
         font-style: italic;
