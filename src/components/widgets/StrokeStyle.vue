@@ -18,8 +18,8 @@
                 @change="emitChange"
             )
             label Width (px)
-        .spacer
-        .flexPrompt
+        .spacer(v-if="stroke.dashScale > 0")
+        .flexPrompt(v-if="stroke.dashScale > 0")
             label Dashed:
             Checkbox#gradientCheckbox(
                 v-model="stroke.dashed"
@@ -35,7 +35,7 @@ import * as vue from 'vue'
 import Slider from 'primevue/slider'
 import { TinyColor } from '@ctrl/tinycolor'
 
-import { STYLE_STRING_FIELD_SEPARATOR } from '#root/utils/styling'
+import { STYLE_STRING_FIELD_SEPARATOR, type StrokeAttributes } from '#root/utils/styling'
 import { useThemeCssVariables } from '#root/utils/themeCssVariables'
 
 useThemeCssVariables('checkbox')
@@ -45,25 +45,18 @@ useThemeCssVariables('slider')
 
 //==============================================================================
 
-const props = defineProps<{ pathStyle: string }>()
+const props = defineProps<{ strokeStyle: string }>()
 
 const emit = defineEmits(['change'])
 
 //==============================================================================
 
-type StrokeFields = {
-    colour?: string
-    dashed?: boolean
-    width?: number
-    dashScale?: number
-}
-
 function makeColour(colour: string): string {
     return new TinyColor(colour).toHexString()
 }
 
-const stroke = vue.computed<StrokeFields>(() => {
-    const strokeArray: string[] = props.pathStyle.split(STYLE_STRING_FIELD_SEPARATOR)
+const stroke = vue.computed<StrokeAttributes>(() => {
+    const strokeArray: string[] = props.strokeStyle.split(STYLE_STRING_FIELD_SEPARATOR)
     return {
         colour: makeColour((strokeArray.at(0)) as string),
         width: Number((strokeArray.at(1)) as string),

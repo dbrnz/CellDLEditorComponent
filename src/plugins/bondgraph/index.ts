@@ -916,7 +916,7 @@ export class BondgraphPlugin implements PluginInterface {
                 await this.#updateSvgElement(celldlObject, pluginData.species, pluginData.location)
             }
         }
-        if (styling.pathStyle) {
+        if (styling.strokeStyle) {
             celldlObject.celldlSvgElement!.setStyle(styling)
         }
     }

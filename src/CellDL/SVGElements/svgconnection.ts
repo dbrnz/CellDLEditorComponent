@@ -217,7 +217,7 @@ export class SvgConnection extends CellDLSVGElement {
 
     getStyle(): Styling {
         return {
-            pathStyle: getStrokeString(this.svgElement, {
+            strokeStyle: getStrokeString(this.svgElement, {
                 colour: CONNECTION_COLOUR,
                 width: CONNECTION_WIDTH,
                 dashScale: CONNECTION_DASH
@@ -226,8 +226,8 @@ export class SvgConnection extends CellDLSVGElement {
     }
 
     setStyle(styling: Styling) {
-        if (styling.pathStyle) {
-            setStrokeFromString(this.svgElement, styling.pathStyle)
+        if (styling.strokeStyle) {
+            setStrokeFromString(this.svgElement, styling.strokeStyle)
         }
     }
 }

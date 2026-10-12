@@ -54,7 +54,7 @@ export type Styling = {
      * and if so, the length of a dash as a multiplier to apply to the stroke's
      * width.
      */
-    pathStyle?: string
+    strokeStyle?: string
 
     /**
      * How a block of text is styled.

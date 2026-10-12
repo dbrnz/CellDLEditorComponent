@@ -310,7 +310,7 @@ export class Compartment {
         this.#styling.fillStyle = fillString
         if (!isRegion && innerRects.length) {
             let cornerRadius = 0
-            this.#styling.pathStyle = getStrokeString(this.#boundary0 as SVGRectElement,
+            this.#styling.strokeStyle = getStrokeString(this.#boundary0 as SVGRectElement,
             {
                 colour: DEFAULT_COMPARTMENT_STYLE.strokeColour,  //
                 width: DEFAULT_COMPARTMENT_STYLE.strokeWidth,
@@ -383,11 +383,11 @@ export class Compartment {
             }
         }
 
-        if (styling.pathStyle) {
-            this.#styling.pathStyle = styling.pathStyle
-            setStrokeFromString(this.#boundary0, styling.pathStyle)
+        if (styling.strokeStyle) {
+            this.#styling.strokeStyle = styling.strokeStyle
+            setStrokeFromString(this.#boundary0, styling.strokeStyle)
             if (this.#boundary1) {
-                setStrokeFromString(this.#boundary1, styling.pathStyle)
+                setStrokeFromString(this.#boundary1, styling.strokeStyle)
             }
         }
 

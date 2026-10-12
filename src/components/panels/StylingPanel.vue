@@ -28,12 +28,12 @@
                                     :textStyle="group.styling.textStyle"
                                     @change="(textStyle) => updateTextStyle(textStyle, groupIndex)"
                                 )
-                        AccordionPanel(v-if="group.styling.pathStyle" value="stroke")
+                        AccordionPanel(v-if="group.styling.strokeStyle" value="stroke")
                             AccordionHeader(:pt="{ root: { class: 'left-icon' } }") Stroke
                             AccordionContent
-                                PathStyle(
-                                    :pathStyle="group.styling.pathStyle"
-                                    @change="(pathStyle) => updatePathStyle(pathStyle, groupIndex)"
+                                StrokeStyle(
+                                    :strokeStyle="group.styling.strokeStyle"
+                                    @change="(strokeStyle) => updateStrokeStyle(strokeStyle, groupIndex)"
                                 )
                         AccordionPanel(v-if="group.styling.gapStyle" value="membrane")
                             AccordionHeader(:pt="{ root: { class: 'left-icon' } }") Membrane
@@ -55,7 +55,7 @@ import type { Styling } from '#root/utils/styling'
 import CornerStyle from '../widgets/CornerStyle.vue'
 import FillStyle from '../widgets/FillStyle.vue'
 import GapStyle from '../widgets/GapStyle.vue'
-import PathStyle from '../widgets/PathStyle.vue'
+import StrokeStyle from '../widgets/StrokeStyle.vue'
 import TextStyle from '../widgets/TextStyle.vue'
 
 import ToolPanel from './ToolPanel.vue'
@@ -97,7 +97,7 @@ const defaultPanel = vue.computed<string[]>(() => {
                 return []
             }
         }
-        if (group.styling?.pathStyle) {
+        if (group.styling?.strokeStyle) {
             if (!defaultPanel) {
                 defaultPanel = 'stroke'
             } else if (defaultPanel !== 'stroke') {
@@ -117,7 +117,7 @@ const defaultPanel = vue.computed<string[]>(() => {
 
 //==============================================================================
 
-type StylingFields = 'cornerStyle' | 'fillStyle' | 'gapStyle' | 'pathStyle' | 'textStyle'
+type StylingFields = 'cornerStyle' | 'fillStyle' | 'gapStyle' | 'strokeStyle' | 'textStyle'
 
 function updateStyling(field: StylingFields, value: string, groupIndex: number) {
     const styling = properties.value.groups[groupIndex]?.styling
@@ -141,8 +141,8 @@ function updateGapStyle(gapStyle: string, groupIndex: number) {
     updateStyling('gapStyle', gapStyle, groupIndex)
 }
 
-function updatePathStyle(pathStyle: string, groupIndex: number) {
-    updateStyling('pathStyle', pathStyle, groupIndex)
+function updateStrokeStyle(strokeStyle: string, groupIndex: number) {
+    updateStyling('strokeStyle', strokeStyle, groupIndex)
 }
 
 function updateTextStyle(textStyle: string, groupIndex: number) {
