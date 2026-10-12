@@ -71,7 +71,7 @@ export function createCompartmentSvgElement(id: string, topLeft: PointLike, bott
     svgElement.insertAdjacentHTML('beforeend', createRectAsString(topLeft, bottomRight, styling, styling.strokeGap/2))
     if (styling.strokeGap > 0) {
         svgElement.insertAdjacentHTML('beforeend', createRectAsString(topLeft, bottomRight, styling, -styling.strokeGap/2))
-        svgElement.setAttribute('data-stroke-gap', String(styling.strokeGap))
+        svgElement.dataset.strokeGap = String(styling.strokeGap)
     }
     return svgElement
 }
@@ -164,7 +164,7 @@ class TextElement {
     constructor(parent: SVGGElement, containerSize: RectDimensions) {
         this.#containerSize = containerSize
         this.#canvas = document.createElement('canvas')
-        this.#setStyle(parent.getAttribute('data-text-style') || DEFAULT_TEXT_STYLE)
+        this.#setStyle(parent.dataset.textStyle || DEFAULT_TEXT_STYLE)
         const xMetrics = this.#getTextSize('x', FONT)
         this.#xHeight = xMetrics?.actualBoundingBoxAscent || FONT_PIXEL_SIZE/2
         this.#setPosition()
@@ -287,12 +287,12 @@ export class Compartment {
         this.#svgElement = celldlObject.svgElement as SVGGElement
         const innerRects = [...this.#svgElement.querySelectorAll('rect').values()]
         this.#boundary0 = innerRects[0] as SVGRectElement
-        const strokeGap = isRegion ? 0 : Number(this.#svgElement.getAttribute('data-stroke-gap')) || 0
+        const strokeGap = isRegion ? 0 : Number(this.#svgElement.dataset.strokeGap) || 0
         if (!isRegion) {
             this.#boundary1 = innerRects[1]
             this.#styling.gapStyle = String(strokeGap)
         }
-        let fillString = this.#svgElement.getAttribute('data-fill-style')
+        let fillString = this.#svgElement.dataset.fillStyle
         if (!fillString) {
             if (innerRects.length) {
                 if (strokeGap === 0) {
@@ -333,7 +333,7 @@ export class Compartment {
     }
 
     setStyling(styling: Styling) {
-        let strokeGap = Number(this.#svgElement.getAttribute('data-stroke-gap')) || 0
+        let strokeGap = Number(this.#svgElement.dataset.strokeGap) || 0
         if (styling.gapStyle && strokeGap !== Number(styling.gapStyle)) {
             this.#styling.gapStyle = styling.gapStyle
             const newGap = Number(styling.gapStyle)
@@ -344,7 +344,7 @@ export class Compartment {
                     this.#svgElement.removeChild(this.#boundary1)
                     this.#boundary1 = undefined
                 }
-                this.#svgElement.removeAttribute('data-stroke-gap')
+                delete this.#svgElement.dataset.strokeGap
             } else if (strokeGap === 0) {
                 // Single to double boundary
                 if (!this.#boundary1) {
@@ -353,7 +353,7 @@ export class Compartment {
                     updateRectDimensions(this.#boundary1, -newGap/2)
                 }
                 updateRectDimensions(this.#boundary0, newGap/2)
-                this.#svgElement.setAttribute('data-stroke-gap', String(newGap))
+                this.#svgElement.dataset.strokeGap = String(newGap)
             } else {
                 // adjust
                 const delta = (newGap - strokeGap)/2
@@ -361,7 +361,7 @@ export class Compartment {
                 if (this.#boundary1) {
                     updateRectDimensions(this.#boundary1, -delta)
                 }
-                this.#svgElement.setAttribute('data-stroke-gap', String(newGap))
+                this.#svgElement.dataset.strokeGap = String(newGap)
             }
             strokeGap = newGap
         }
@@ -370,7 +370,7 @@ export class Compartment {
             this.#styling.fillStyle = styling.fillStyle
             const gradientId = `fill-${this.#objectId}`
             const fill = getFillFromString(styling.fillStyle, gradientId)
-            this.#svgElement.setAttribute('data-fill-style', fill.dataFillStyle)
+            this.#svgElement.dataset.fillStyle = fill.dataFillStyle
             if (strokeGap === 0) {
                 this.#boundary0.setAttribute('fill', fill.fillAttribute)
             } else if (this.#boundary1) {
@@ -406,7 +406,7 @@ export class Compartment {
 
         if (styling.textStyle) {
             this.#textElement.setStyle(styling.textStyle)
-            this.#svgElement.setAttribute('data-text-style', styling.textStyle)
+            this.#svgElement.dataset.textStyle = styling.textStyle
         }
     }
 
