@@ -618,6 +618,16 @@ export class CellDLSVGElement {
 
     drawControlHandles() {}
 
+    setSelectedHandles(enable: boolean) {
+        if (this.selected) {
+            if (enable) {
+                this.drawControlHandles()
+            } else {
+                this.clearControlHandles()
+            }
+        }
+    }
+
     highlight(highlight = true) {
         this.#setSelectionClass('highlight', highlight)
     }

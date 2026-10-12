@@ -471,7 +471,15 @@ export class CellDLConnectedObject extends CellDLMoveableObject {
         super.startMove(svgPoint, options)
         // Remove control handles from selected connections
         this.#connections.forEach(connection => {
-            connection.clearSelectedHandles()
+            connection.setSelectedHandles(false)
+        })
+    }
+
+    endMove() {
+        super.endMove()
+        // Restore control handles on selected connections
+        this.#connections.forEach(connection => {
+            connection.setSelectedHandles(true)
         })
     }
 
@@ -666,9 +674,14 @@ export class CellDLConnection extends CellDLObject {
         this.#svgConnection = new SvgConnection(this, svgElement)
     }
 
-    clearSelectedHandles() {
+    select(selected: boolean=true) {
+        super.select(selected)
+        this.setSelectedHandles(selected)
+    }
+
+    setSelectedHandles(enable: boolean) {
         if (this.#svgConnection) {
-            this.#svgConnection.clearSelectedHandles()
+            this.#svgConnection.setSelectedHandles(enable)
         }
     }
 }

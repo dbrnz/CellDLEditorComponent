@@ -565,7 +565,9 @@ export class CellDLEditor {
 
     #unsetActiveObjects() {
         for (const activeObject of this.#activeObjects.values()) {
-            activeObject.clearControlHandles()
+            if (!activeObject.selected) {
+                activeObject.clearControlHandles()
+            }
             this.#activateObject(activeObject, false)
         }
         this.#activeObjects.clear()
