@@ -389,7 +389,10 @@ export class CellDLMoveableObject extends CellDLObject {
     }
 
     assignSvgElement(svgElement: SVGGraphicsElement, align: boolean) {
-        this.#boundedElement = new BoundedElement(this, svgElement, this.isAlignable, align)
+        this.#boundedElement = new BoundedElement(this, svgElement, {
+            align,
+            gridAligned: this.isAlignable
+        })
     }
 }
 

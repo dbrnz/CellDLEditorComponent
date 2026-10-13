@@ -22,7 +22,11 @@ export class CompartmentElement extends BoundedElement {
     #compartment: Compartment
 
     constructor(celldlObject: CellDLObject, svgElement: SVGGraphicsElement, options: CompartmentElementOptions={}) {
-        super(celldlObject, svgElement, !!options.gridAligned, !!options.align)
+        super(celldlObject, svgElement, {
+            align: !!options.align,
+            edgeAligned: true,
+            gridAligned: !!options.gridAligned
+        })
         this.#compartment = new Compartment(celldlObject, !!options.isRegion)
     }
 

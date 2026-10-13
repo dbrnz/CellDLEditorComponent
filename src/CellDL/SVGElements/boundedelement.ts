@@ -28,7 +28,7 @@ import { Point, type PointLike } from '#root/utils/points'
 import type { Styling } from '#root/utils/styling'
 import { getFillString } from '#root/utils/svgUtils'
 
-import { CellDLSVGElement, type ElementMoveOptions } from '.'
+import { CellDLSVGElement, type ElementMoveOptions, type SvgElementOptions } from '.'
 import type { PathElement } from './utils/pathelement'
 
 //==============================================================================
@@ -48,19 +48,20 @@ export class BoundedElement extends CellDLSVGElement {
     #localTransform: Transform
     #topLeftCorner: Point
 
-    constructor(object: CellDLObject, svgElement: SVGGraphicsElement, gridAligned: boolean=false, align: boolean=false) {
-        super(object, svgElement)
+    constructor(object: CellDLObject, svgElement: SVGGraphicsElement, options: SvgElementOptions) {
+        super(object, svgElement, options)
         // local transform on the element
         this.#localTransform = Transform.fromString(getComputedStyle(svgElement).transform)
         this.#controlRect = new ControlRect(
             RestrictedPoint.fromPoint(this.topLeft),
             RestrictedPoint.fromPoint(this.topLeft.add(this.size)),
-            this.normalisedCentre
+            this.normalisedCentre,
+            options.edgeAligned
         )
         this.setCentroid(this.#controlRect.centroid.point)
         this.#topLeftCorner = this.#controlRect.topLeftPoint
-        this.#controlRect.gridAligned = gridAligned
-        if (gridAligned && align) {
+        this.#controlRect.gridAligned = !!options.gridAligned
+        if (options.align && !options.edgeAligned && options.gridAligned) {
             const gridAlignedCentroid = editGuides.gridAlign(this.centroid, { fullSnap: true })
             this.#reposition(gridAlignedCentroid)
         }

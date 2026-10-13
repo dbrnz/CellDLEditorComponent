@@ -43,6 +43,12 @@ export type DomLocation = {
     priorSiblingId?: string
 }
 
+export type SvgElementOptions = {
+    align?: boolean
+    edgeAligned?: boolean
+    gridAligned?: boolean
+}
+
 //==============================================================================
 
 const CONDUIT_SELECTION_RADIUS = 9
@@ -84,6 +90,7 @@ export class CellDLSVGElement {
     #bounds!: Bounds
     #centroid!: Point
     #normalisedCentre: Point = new Point(0.5, 0.5)
+    #edgeAligned: boolean = false
     #cornerOffsets!: [Point, Point, Point, Point] // Wrt centroid, anticlockwise from bottom right
     #selected: boolean = false
     #selectionClasses: Set<string> = new Set()
@@ -96,7 +103,8 @@ export class CellDLSVGElement {
 
     constructor(
         readonly celldlObject: CellDLObject,
-        svgElement: SVGGraphicsElement | null
+        svgElement: SVGGraphicsElement | null,
+        options?: SvgElementOptions
     ) {
         if (svgElement === null) {
             throw new Error(`CellDL object '${celldlObject.id}' isn't represented in SVG...`)
@@ -112,6 +120,7 @@ export class CellDLSVGElement {
             element = element.parentNode as SVGGraphicsElement
         }
         celldlObject.setCelldlSvgElement(this)
+        this.#edgeAligned = !!options?.edgeAligned
         this.#svgElement = svgElement
         this.#selectionElement = svgElement
         this.#updatedSvgElement()
@@ -191,7 +200,7 @@ export class CellDLSVGElement {
     #updateBounds() {
         const bounds = this.svgBounds(true)
         this.#size = new Point(bounds.right - bounds.left, bounds.bottom - bounds.top)
-        if (this.#centroid) {
+        if (!this.#edgeAligned && this.#centroid) {
             this.#topLeft = this.#centroid.subtract(this.#size.scale(this.#normalisedCentre))
             // Get bounds in local coordinates
             this.#bounds = new Bounds(
