@@ -307,6 +307,9 @@ export class CellDLObject {
         this.#celldlSvgElement?.drawControlHandles()
     }
 
+    setSelectedHandles(_enable: boolean) {
+    }
+
     highlight(highlight: boolean=true) {
         this.#celldlSvgElement?.highlight(highlight)
     }
@@ -318,6 +321,7 @@ export class CellDLObject {
     }
 
     select(selected: boolean=true) {
+        this.setSelectedHandles(selected)
         this.#celldlSvgElement?.select(selected)
     }
 
@@ -672,11 +676,6 @@ export class CellDLConnection extends CellDLObject {
 
     assignSvgElement(svgElement: SVGGraphicsElement, _align: boolean) {
         this.#svgConnection = new SvgConnection(this, svgElement)
-    }
-
-    select(selected: boolean=true) {
-        super.select(selected)
-        this.setSelectedHandles(selected)
     }
 
     setSelectedHandles(enable: boolean) {
