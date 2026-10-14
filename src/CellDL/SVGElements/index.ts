@@ -24,11 +24,10 @@ import { Point, type PointLike, PointMath } from '#root/utils/points'
 import { CONNECTION_SPLAY_PADDING, MAX_CONNECTION_SPLAY_PADDING } from '#root/utils/styling'
 import { CONNECTION_WIDTH, SELECTION_STROKE_WIDTH } from '#root/utils/styling'
 import type { Styling } from '#root/utils/styling'
-import { setRectDimensions, svgCircle, type RectDimensions, getRectDimensions, modifyRectDimensions, svgRectElement } from '#root/utils/svgUtils'
+import { svgCircle, type RectDimensions, getRectDimensions, modifyRectDimensions, svgRectElement } from '#root/utils/svgUtils'
 
 import { CELLDL_STYLE_CLASS, type CellDLObject } from '#editor/celldlObjects'
 import { Bounds, type PointMoveOptions, type RestrictedValue } from '#editor/geometry'
-import { FixedControlRect } from '#editor/geometry/controls'
 import { Transform } from '#editor/geometry/transforms'
 
 //==============================================================================
