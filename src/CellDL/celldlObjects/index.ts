@@ -415,6 +415,12 @@ export class CellDLAnnotation extends CellDLMoveableObject {
             isRegion: true
         })
     }
+
+    setSelectedHandles(enable: boolean) {
+        if (this.#annotationElement) {
+            this.#annotationElement.setSelectedHandles(enable)
+        }
+    }
 }
 
 //==============================================================================
@@ -613,6 +619,12 @@ export class CellDLCompartment extends CellDLConnectedObject {
         super.endMove()
         for (const component of this.#associatedComponents) {
             component.endMove()
+        }
+    }
+
+    setSelectedHandles(enable: boolean) {
+        if (this.#compartmentElement) {
+            this.#compartmentElement.setSelectedHandles(enable)
         }
     }
 }

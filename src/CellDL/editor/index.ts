@@ -125,7 +125,9 @@ export function getElementId(element: SVGGraphicsElement): string {
 //==============================================================================
 
 const SVG_PANEL_ID = 'svg-panel'
-type PointerEventHandler = (eventType: string, svgElement: SVGGraphicsElement, svgCoords: PointLike) => boolean
+export type PointerEventHandler = (eventType: string, svgElement: SVGGraphicsElement, svgCoords: PointLike) => boolean
+
+//==============================================================================
 
 
 export class CellDLEditor {
@@ -892,6 +894,9 @@ export class CellDLEditor {
     }
 
     #pointerOutEvent(event: PointerEvent) {
+        if (this.#handlePointerEvents(event)) {
+            return
+        }
         const element = event.target as SVGGraphicsElement
         if (
             element === this.#svgDiagram ||

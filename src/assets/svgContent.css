@@ -115,9 +115,7 @@
     rx: calc(var(--editor-membrane-radius) - var(--editor-membrane-gap)/2) /* See DOUBLE_BOUNDARY_OFFSET */
 }
 
-/* Compartments */
-
-#svg-container #compartment-select-rect {
+#svg-container .editor-resizer-box {
     fill: none;
 }
 

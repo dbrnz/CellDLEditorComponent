@@ -148,7 +148,26 @@ export class BoundedElement extends CellDLSVGElement {
         if (this.#controlRect.dirty) {
             this.redraw()
         }
+
+//==============================================================================
+
+    startResize() {
+        this.#controlRect.startResize()
+        super.startResize()
     }
+
+    resize(topLeftDelta: PointLike, bottomRightDelta: PointLike) {
+        this.#controlRect.resize(topLeftDelta, bottomRightDelta, true)
+        this.redraw()
+        super.resize(topLeftDelta, bottomRightDelta)
+    }
+
+    endResize() {
+        this.#controlRect.endResize()
+        super.endResize()
+    }
+
+//==============================================================================
 
     async updateImageElement(imageData: string) {
         const savedCorners = this.corners.map((point) => Point.fromPoint(point))

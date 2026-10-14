@@ -28,7 +28,7 @@ import { lengthToPixels, pixelsToLength } from '#editor/geometry/units'
 import { round } from '#editor/utils'
 
 import { latexAsSvgDocument } from '#root/mathjax'
-import type { PointLike } from '#root/utils/points'
+import { Point, type PointLike } from '#root/utils/points'
 import { STYLE_STRING_FIELD_SEPARATOR, type StrokeAttributes } from '#root/utils/styling'
 import type { StringProperties } from '#root/utils/types'
 
@@ -148,6 +148,49 @@ export function svgRectElement(
     attributes: StringProperties = {}
 ): SVGRectElement {
     return createSVGElement('rect', svgRectAttributes(topLeft, bottomRight, attributes)) as SVGRectElement
+}
+
+//==============================================================================
+
+export type RectDimensions = {
+    x: number
+    y: number
+    width: number
+    height: number
+}
+
+export function getRectDimensions(rect: SVGRectElement): RectDimensions {
+    return {
+        x: Number(rect.getAttribute('x')),
+        y: Number(rect.getAttribute('y')),
+        width: Number(rect.getAttribute('width')),
+        height: Number(rect.getAttribute('height'))
+    }
+}
+
+export function modifyRectDimensions(rect: SVGRectElement, dimensions: RectDimensions, topLeftDelta: PointLike, bottomRightDelta: PointLike) {
+    const topLeft = Point.fromPoint(dimensions).add(topLeftDelta)
+    const size = Point.fromPoint({x: dimensions.width, y: dimensions.height})
+                            .add(bottomRightDelta)
+                            .subtract(topLeftDelta)
+    setRectDimensions(rect, topLeft, size)
+}
+
+export function setRectDimensions(rect: SVGRectElement, topLeft: PointLike, size: PointLike) {
+    rect.setAttribute('x', String(topLeft.x))
+    rect.setAttribute('y', String(topLeft.y))
+    if (size.x > 0 && size.y > 0) {
+        rect.setAttribute('width', String(size.x))
+        rect.setAttribute('height', String(size.y))
+    }
+}
+
+export function updateRectDimensions(rect: SVGRectElement, delta: number) {  // -ve `delta` will shrink
+    const dims = getRectDimensions(rect)
+    rect.setAttribute('x', `${dims.x - delta}`)
+    rect.setAttribute('y', `${dims.y - delta}`)
+    rect.setAttribute('width', `${Math.max(0, dims.width + 2*delta)}`)
+    rect.setAttribute('height', `${Math.max(0, dims.height + 2*delta)}`)
 }
 
 //==============================================================================

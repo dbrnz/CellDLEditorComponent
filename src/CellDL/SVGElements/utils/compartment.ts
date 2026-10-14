@@ -3,7 +3,7 @@
 import type { CellDLObject } from '#editor/celldlObjects'
 import type { CellDLDiagram } from '#editor/diagram'
 
-import type { PointLike } from '#root/utils/points'
+import { Point, type PointLike } from '#root/utils/points'
 import {
     COMPARTMENT_BACKGROUND,
     MEMBRANE_COLOUR,
@@ -17,10 +17,15 @@ import {
 } from '#root/utils/styling'
 import {
     getFillFromString,
+    getRectDimensions,
     getStrokeString,
+    setRectDimensions,
     setStrokeFromString,
     SVG_URI,
-    svgRect
+    svgRect,
+    updateRectDimensions,
+    type RectDimensions,
+    modifyRectDimensions
 } from '#root/utils/svgUtils'
 
 //==============================================================================
@@ -106,32 +111,6 @@ function createRectAsString(topLeft: PointLike, bottomRight: PointLike,
         { x: bottomRight.x + offset, y: bottomRight.y + offset },
         attributes
     )
-}
-
-//==============================================================================
-
-type RectDimensions = {
-    x: number
-    y: number
-    width: number
-    height: number
-}
-
-function getRectDimensions(rect: SVGRectElement): RectDimensions {
-    return {
-        x: Number(rect.getAttribute('x')),
-        y: Number(rect.getAttribute('y')),
-        width: Number(rect.getAttribute('width')),
-        height: Number(rect.getAttribute('height'))
-    }
-}
-
-function updateRectDimensions(rect: SVGRectElement, delta: number) {  // -ve `delta` will shrink
-    const dims = getRectDimensions(rect)
-    rect.setAttribute('x', `${dims.x - delta}`)
-    rect.setAttribute('y', `${dims.y - delta}`)
-    rect.setAttribute('width', `${Math.max(0, dims.width + 2*delta)}`)
-    rect.setAttribute('height', `${Math.max(0, dims.height + 2*delta)}`)
 }
 
 //==============================================================================
@@ -276,6 +255,7 @@ export class Compartment {
     #celldlDiagram: CellDLDiagram
     #celldlObject: CellDLObject
     #objectId: string
+    #startResizeDims: RectDimensions|undefined
     #styling: Styling = {}
     #svgElement: SVGGElement
     #textElement: TextElement
@@ -408,6 +388,26 @@ export class Compartment {
             this.#textElement.setStyle(styling.textStyle)
             this.#svgElement.dataset.textStyle = styling.textStyle
         }
+    }
+
+    startResize() {
+        this.#startResizeDims = getRectDimensions(this.#boundary0)
+    }
+
+    resize(topLeftDelta: PointLike, bottomRightDelta: PointLike) {
+        if (this.#startResizeDims) {
+            modifyRectDimensions(this.#boundary0, this.#startResizeDims, topLeftDelta, bottomRightDelta)
+            if (this.#boundary1) {
+                const strokeGap = Number(this.#svgElement.dataset.strokeGap) || 0
+                const dims = getRectDimensions(this.#boundary0)
+                setRectDimensions(this.#boundary1, {x: dims.x + strokeGap, y: dims.y + strokeGap},
+                                                   {x: dims.width - 2*strokeGap, y: dims.height - 2*strokeGap})
+            }
+        }
+    }
+
+    endResize() {
+         this.#startResizeDims = undefined
     }
 
     update() {

@@ -68,7 +68,7 @@ import type { BoundedElement } from '#editor/SVGElements/boundedelement'
 import { createCompartmentSvgElement } from '#editor/SVGElements/utils/compartment'
 import type { SvgConnection } from '#editor/SVGElements/svgconnection'
 
-import { type CellDLEditor, notifyChanges } from '#editor/editor'
+import { type CellDLEditor, notifyChanges, type PointerEventHandler } from '#editor/editor'
 import { editGuides } from '#editor/editor/editguides'
 import { undoRedo, type UndoState } from '#editor/diagram/undoredo'
 
@@ -225,6 +225,14 @@ export class CellDLDiagram {
 
     get uri(): string {
         return this.#documentNode.value
+    }
+
+    addPointerEventHandler(handlerId: string, handler: PointerEventHandler) {
+        this.#celldlEditor.addPointerEventHandler(handlerId, handler)
+    }
+
+    removePointerEventHandler(handlerId: string) {
+        this.#celldlEditor.removePointerEventHandler(handlerId  )
     }
 
     domToSvgCoords(domCoords: PointLike): DOMPoint {

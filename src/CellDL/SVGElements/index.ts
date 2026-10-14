@@ -24,7 +24,7 @@ import { Point, type PointLike, PointMath } from '#root/utils/points'
 import { CONNECTION_SPLAY_PADDING, MAX_CONNECTION_SPLAY_PADDING } from '#root/utils/styling'
 import { CONNECTION_WIDTH, SELECTION_STROKE_WIDTH } from '#root/utils/styling'
 import type { Styling } from '#root/utils/styling'
-import { svgCircle } from '#root/utils/svgUtils'
+import { setRectDimensions, svgCircle, type RectDimensions, getRectDimensions, modifyRectDimensions, svgRectElement } from '#root/utils/svgUtils'
 
 import { CELLDL_STYLE_CLASS, type CellDLObject } from '#editor/celldlObjects'
 import { Bounds, type PointMoveOptions, type RestrictedValue } from '#editor/geometry'
@@ -97,6 +97,7 @@ export class CellDLSVGElement {
     #selectionElement: SVGGraphicsElement
     #size: Point = new Point()
     #svgElement: SVGGraphicsElement
+    #startResizeDims: RectDimensions|undefined
     #topLeft!: Point
     #globalTransform: Transform = Transform.Identity()
     #svgDiagramElement: SVGSVGElement
@@ -198,7 +199,19 @@ export class CellDLSVGElement {
     }
 
     #updateBounds() {
+        let selectionState: string|null|undefined
+        if (this.#svgElement.tagName === 'g' && this.#selectionElement.tagName === 'rect') {
+            selectionState = this.#selectionElement.getAttribute('display')
+            this.#selectionElement.setAttribute('display', 'none')
+        }
         const bounds = this.svgBounds(true)
+        if (selectionState !== undefined) {
+            if (selectionState !== null) {
+                this.#selectionElement.setAttribute('display', selectionState)
+            } else {
+                this.#selectionElement.removeAttribute('display')
+            }
+        }
         this.#size = new Point(bounds.right - bounds.left, bounds.bottom - bounds.top)
         if (!this.#edgeAligned && this.#centroid) {
             this.#topLeft = this.#centroid.subtract(this.#size.scale(this.#normalisedCentre))
@@ -348,7 +361,32 @@ export class CellDLSVGElement {
 
     move(_svgPoint: PointLike, _options: ElementMoveOptions={}) {}
 
-    endMove() {}
+    endMove() {
+        // Update dimensions in case the element has been moved by a sub-class
+        this.#updateBounds()
+    }
+
+//==============================================================================
+
+    startResize() {
+        if (this.#selectionElement.tagName === 'rect') {
+            this.#startResizeDims = getRectDimensions(this.#selectionElement as SVGRectElement)
+        }
+    }
+
+    resize(topLeftDelta: PointLike, bottomRightDelta: PointLike) {
+        if (this.#startResizeDims) {
+            modifyRectDimensions(this.#selectionElement as SVGRectElement,
+                                 this.#startResizeDims, topLeftDelta, bottomRightDelta)
+        }
+        this.#updateBounds()
+    }
+
+    endResize() {
+        this.#startResizeDims = undefined
+    }
+
+//==============================================================================
 
     xBounds(padding: number = 0): [number, number] {
         padding = this.xPadding(padding)
