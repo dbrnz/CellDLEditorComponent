@@ -282,12 +282,11 @@ export class CellDLSVGElement {
                 svgChild.setAttribute('width', `${bounds.width}px`)
                 svgChild.setAttribute('height', `${bounds.height}px`)
             }
-            const selectionRect = new FixedControlRect(bounds.asArray()) // versus control rect in RectangularObject
-            const svg = selectionRect.svg({
+            const bottomRight = bounds.topLeft.add({x: bounds.width, y: bounds.height})
+            this.#selectionElement = svgRectElement(bounds.topLeft, bottomRight, {
                 class: `selection-element parent-id editor-specific ${[...this.#selectionClasses.values()].join(' ')}`
             })
-            this.#svgElement.insertAdjacentHTML('beforeend', svg)
-            this.#selectionElement = this.#svgElement.lastChild as SVGGraphicsElement
+            this.#svgElement.appendChild(this.#selectionElement)
             // Indicate a component is a conduit with a circular mark at its centre
             if (this.celldlObject.isConduit) {
                 const centre = new Point(bounds.right - bounds.left, bounds.bottom - bounds.top)

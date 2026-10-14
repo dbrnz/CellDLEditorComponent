@@ -63,7 +63,11 @@ export class BoundedElement extends CellDLSVGElement {
         this.#controlRect.gridAligned = !!options.gridAligned
         if (options.align && !options.edgeAligned && options.gridAligned) {
             const gridAlignedCentroid = editGuides.gridAlign(this.centroid, { fullSnap: true })
-            this.#reposition(gridAlignedCentroid)
+            this.setCentroid(gridAlignedCentroid)
+            this.#controlRect.reposition(gridAlignedCentroid)
+            if (this.#controlRect.dirty) {
+                this.redraw()
+            }
         }
     }
 
@@ -142,12 +146,6 @@ export class BoundedElement extends CellDLSVGElement {
         super.redraw()
     }
 
-    #reposition(centroid: Point) {
-        this.setCentroid(centroid)
-        this.#controlRect.reposition(centroid)
-        if (this.#controlRect.dirty) {
-            this.redraw()
-        }
 
 //==============================================================================
 
