@@ -41,8 +41,9 @@ import { componentLibraryPlugin } from '#root/plugins'
 
 //==============================================================================
 
+import { DEFAULT_VIEW_STATE } from './defaults'
 import { EditorFrame } from './editorframe'
-import { DEFAULT_VIEW_STATE, editGuides, EDITOR_GRID_CLASS } from './editguides'
+import { editGuides, EDITOR_GRID_CLASS } from './editguides'
 import PanZoom from './panzoom'
 import { BoxMaker } from './boxmaker'
 

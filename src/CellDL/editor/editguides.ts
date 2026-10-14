@@ -27,6 +27,8 @@ import type { ViewState } from '#root/utils/editor-types'
 import { Point, type PointLike } from '#root/utils/points'
 import { getViewbox, SVG_URI } from '#root/utils/svgUtils'
 
+import { defaultGridOptions } from './defaults'
+
 //==============================================================================
 
 export const EDITOR_GRID_CLASS = 'alignment-grid'
@@ -62,27 +64,11 @@ export type GridAlignOptions = {
     snapGrid?: boolean
 }
 
-type GridOptions = {
+export type GridOptions = {
     gridSpacing: number // pixels
     resolution: number
     snapGrid: boolean
     fullSnap: boolean
-}
-
-// Needs to match what's passed to the CellDLEditor component as `viewState`
-
-const defaultGridOptions: GridOptions = {
-    gridSpacing: GRID_SPACING,
-    resolution: GRID_SNAP_RESOLUTION,
-    snapGrid: true,
-    fullSnap: true,
-}
-
-export const DEFAULT_VIEW_STATE: ViewState = {
-    showGrid: true,
-    gridSpacing: GRID_SPACING,
-    snapToGrid: defaultGridOptions.snapGrid ? (defaultGridOptions.fullSnap ? 1 : 0.5) : 0,
-    alignmentGuides: true
 }
 
 //==============================================================================

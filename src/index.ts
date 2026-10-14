@@ -22,7 +22,7 @@ import CellDLEditor from '#root/components/EditorComponent'
 
 //==============================================================================
 
-export { DEFAULT_VIEW_STATE } from '#editor/editor/editguides'
+export { DEFAULT_VIEW_STATE } from '#editor/editor/defaults'
 
 export {
     type EditorState,
