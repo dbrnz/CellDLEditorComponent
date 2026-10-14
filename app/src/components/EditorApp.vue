@@ -593,7 +593,13 @@ function onEditAction(action: string) {
 const viewState = vue.ref<ViewState>({ ...DEFAULT_VIEW_STATE })
 
 function onViewAction(action: string, value: number|boolean) {
-    if (action === 'show-grid') {
+    if (action === 'show-axes') {
+        viewState.value = { ...viewState.value, showAxes: !!value }
+        editorCommand.value = {
+            command: 'view',
+            options: viewState.value
+        }
+    } else if (action === 'show-grid') {
         viewState.value = { ...viewState.value, showGrid: !!value }
         editorCommand.value = {
             command: 'view',

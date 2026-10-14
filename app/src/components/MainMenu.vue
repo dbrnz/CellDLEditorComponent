@@ -117,6 +117,14 @@ const viewItems = {
     label: 'View',
     items: [
         {
+            label: 'Axes',
+            icon: getCheckedIcon(!!props.viewState.showAxes),
+            command: (e: MenuItemCommandEvent) => {
+                e.item.icon = toggleCheckedIcon(e.item)
+                emit('view-action', 'show-axes', itemChecked(e.item))
+            }
+        },
+        {
             label: 'Grid',
             icon: getCheckedIcon(!!props.viewState.showGrid),
             command: (e: MenuItemCommandEvent) => {

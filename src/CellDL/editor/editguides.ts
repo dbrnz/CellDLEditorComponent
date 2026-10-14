@@ -27,7 +27,7 @@ import type { ViewState } from '#root/utils/editor-types'
 import { Point, type PointLike } from '#root/utils/points'
 import { getViewbox, SVG_URI } from '#root/utils/svgUtils'
 
-import { defaultGridOptions } from './defaults'
+import { defaultGridOptions, DEFAULT_VIEW_STATE } from './defaults'
 
 //==============================================================================
 
@@ -334,6 +334,12 @@ class ComponentGuides {
         this.#verticalGuideGroup = new ComponentGuideGroup('V', [extent[1], extent[3]])
         celldlDiagram.addEditorElement(this.#horizontalGuideGroup.svgGroup)
         celldlDiagram.addEditorElement(this.#verticalGuideGroup.svgGroup)
+        this.showAxes(!!DEFAULT_VIEW_STATE.showAxes)
+    }
+
+    #addAxes() {
+        this.#horizontalGuideGroup.add('X-axis', 0)
+        this.#verticalGuideGroup.add('Y-axis', 0)
     }
 
     addComponent(component: CellDLMoveableObject) {
@@ -373,6 +379,21 @@ class ComponentGuides {
     setTransform(viewbox: Extent) {
         this.#horizontalGuideGroup.setTransform(viewbox)
         this.#verticalGuideGroup.setTransform(viewbox)
+    }
+
+    #showAxes() {
+        this.#horizontalGuideGroup.show('X-axis', 0)
+        this.#verticalGuideGroup.show('Y-axis', 0)
+    }
+
+    showAxes(show: boolean) {
+        if (show) {
+            this.#addAxes()
+            this.#showAxes()
+        } else {
+            this.#horizontalGuideGroup.remove('X-axis', 0)
+            this.#verticalGuideGroup.remove('Y-axis', 0)
+        }
     }
 }
 
@@ -446,6 +467,11 @@ class EditGuides {
             }
         }
         this.#guidesEnabled = !!state.alignmentGuides
+        if (this.#componentGuides) {
+            if (state.showAxes !== undefined) {
+                this.#componentGuides.showAxes(state.showAxes)
+            }
+        }
     }
 
     viewboxUpdated(viewbox: Extent) {
