@@ -20,7 +20,7 @@
             .text-xl Draw bond:
             .icons.packed
                 .icon.ci(
-                    v-for="toolDefn in pathStyleDefns"
+                    v-for="toolDefn in strokeStyleDefns"
                     :class="[ toolDefn.icon, { selected: toolDefn.selected } ]"
                     :id="toolDefn.id"
                     :aria-label="toolDefn.name"
@@ -122,7 +122,7 @@ const componentDefns = vue.computed(() => {
     return toolDefinitions.value.filter(defn => defn.mode === 'component')
 })
 
-const pathStyleDefns = vue.computed(() => {
+const strokeStyleDefns = vue.computed(() => {
     return toolDefinitions.value.filter(defn => defn.mode === 'path')
 })
 
