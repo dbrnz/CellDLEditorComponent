@@ -73,7 +73,7 @@ class BranchPoint implements PointLike {
 
 //==============================================================================
 
-export class CellDLObject {
+export abstract class CellDLObject {
     static celldlStyleClass: CELLDL_STYLE_CLASS = CELLDL_STYLE_CLASS.Unknown
     static celldlTypeName: string = 'Object'
 

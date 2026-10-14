@@ -86,7 +86,7 @@ export function setInternalIds(svgElement: SVGGraphicsElement, previousId: strin
 
 //==============================================================================
 
-export class CellDLSVGElement {
+export abstract class CellDLSVGElement {
     #bounds!: Bounds
     #centroid!: Point
     #normalisedCentre: Point = new Point(0.5, 0.5)
