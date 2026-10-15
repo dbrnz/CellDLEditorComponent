@@ -203,7 +203,10 @@ class TextElement {
         this.#vAlign = fields.at(1) || '0'
     }
 
-    resize(_size: PointLike) {
+    updateDimensions(containerSize: RectDimensions) {
+        this.#containerSize = containerSize
+        this.#setPosition()
+        this.#updateText()
     }
 
     updateText(text: string|undefined) {
@@ -403,6 +406,7 @@ export class Compartment {
                 setRectDimensions(this.#boundary1, {x: dims.x + strokeGap, y: dims.y + strokeGap},
                                                    {x: dims.width - 2*strokeGap, y: dims.height - 2*strokeGap})
             }
+        this.#textElement.updateDimensions(getRectDimensions(this.#boundary0))
         }
     }
 
