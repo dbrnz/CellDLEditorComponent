@@ -324,6 +324,10 @@ export class Compartment {
                 // Double to single boundary
                 updateRectDimensions(this.#boundary0, 0)
                 if (this.#boundary1) {
+                    const fill = this.#boundary1.getAttribute('fill')
+                    if (fill) {
+                        this.#boundary0.setAttribute('fill', fill)
+                    }
                     this.#svgElement.removeChild(this.#boundary1)
                     this.#boundary1 = undefined
                 }
@@ -333,9 +337,14 @@ export class Compartment {
                 if (!this.#boundary1) {
                     this.#boundary1 = this.#boundary0.cloneNode() as SVGRectElement
                     this.#svgElement.appendChild(this.#boundary1)
-                    updateRectDimensions(this.#boundary1, -newGap/2)
                 }
-                updateRectDimensions(this.#boundary0, newGap/2)
+                updateRectDimensions(this.#boundary1, -newGap/2)
+                updateRectDimensions(this.#boundary0,  newGap/2)
+                const fill = this.#boundary0.getAttribute('fill')
+                    if (fill) {
+                        this.#boundary0.setAttribute('fill', 'none')
+                        this.#boundary1.setAttribute('fill', fill)
+                    }
                 this.#svgElement.dataset.strokeGap = String(newGap)
             } else {
                 // adjust
