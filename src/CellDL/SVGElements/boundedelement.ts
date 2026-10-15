@@ -75,11 +75,6 @@ export class BoundedElement extends CellDLSVGElement {
         return !this.svgElement.classList.contains(CELLDL_STYLE_CLASS.Interface)
     }
 
-    startMove(svgPoint: PointLike, options: ElementMoveOptions={}) {
-        this.#controlRect.startMove(svgPoint)
-        this.#excludeConnectionIds = options?.excludeConnectionIds || new Set()
-    }
-
     limitDirection(direction: string, minimum: number | RestrictedValue, maximum: number | RestrictedValue) {
         if (direction === 'H') {
             this.#controlRect.centroid.xValue.narrowRange(minimum, maximum)
@@ -95,23 +90,33 @@ export class BoundedElement extends CellDLSVGElement {
         this.#controlRect.centroid.yValue.reassignMaximum(Infinity)
     }
 
-    move(svgPoint: PointLike, options: ElementMoveOptions={}) {
+//==============================================================================
+
+    startMove(svgPoint: PointLike, options: ElementMoveOptions={}) {
+        this.#controlRect.startMove(svgPoint)
+        this.#excludeConnectionIds = options?.excludeConnectionIds || new Set()
+    }
+
+    move(svgPoint: PointLike, options: ElementMoveOptions={}): boolean {
         const savedCentroid = this.centroid
         // This sets the control rect's attributes but doesn't paint anything
-        this.#controlRect.move(svgPoint, options)
-        this.setCentroid(this.#controlRect.centroid.point)
-        const centroidDelta = this.centroid.subtract(savedCentroid)
-        // Reset any restrictions for `elementBoundingBoxBoxMoved()`
-        this.unlimitDirection()
-        for (const path of this.#connectedPathElements.values()) {
-            if (!this.#excludeConnectionIds.has(path.connection.id)) {
-                path.elementBoundingBoxMoved(this, centroidDelta)
+
+        if (this.#controlRect.move(svgPoint, options)) {
+            this.setCentroid(this.#controlRect.centroid.point)
+            const centroidDelta = this.centroid.subtract(savedCentroid)
+            // Reset any restrictions for `elementBoundingBoxBoxMoved()`
+            this.unlimitDirection()
+            for (const path of this.#connectedPathElements.values()) {
+                if (!this.#excludeConnectionIds.has(path.connection.id)) {
+                    path.elementBoundingBoxMoved(this, centroidDelta)
+                }
             }
-        }
-        if (this.#controlRect.dirty) {
             this.celldlObject.redraw()
             this.svgBounds(true)  // Recalculate the element's bounds
+
+            return true
         }
+        return false
     }
 
     endMove() {
@@ -122,6 +127,8 @@ export class BoundedElement extends CellDLSVGElement {
             }
         }
     }
+
+//==============================================================================
 
     addPathElement(path: PathElement) {
         this.#connectedPathElements.set(path.id, path)

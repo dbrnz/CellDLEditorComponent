@@ -600,10 +600,13 @@ export class CellDLCompartment extends CellDLConnectedObject {
         }
     }
 
+// after a resize need to update associatedComponents
+
     startMove(svgPoint: PointLike, options: ElementMoveOptions={}) {
         super.startMove(svgPoint, options)
+        // this needs to be like a selection-set start move....
         for (const component of this.#associatedComponents) {
-            component.startMove(svgPoint, { noAlign: true, snapGrid: false })
+            component.startMove(svgPoint, options)
         }
     }
 
@@ -611,7 +614,7 @@ export class CellDLCompartment extends CellDLConnectedObject {
         super.move(svgPoint, options)
         // A move of the compartment moves associated components.
         for (const component of this.#associatedComponents) {
-            component.move(svgPoint, { noAlign: true, snapGrid: false })
+            component.move(svgPoint, options)
         }
     }
 

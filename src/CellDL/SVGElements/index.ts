@@ -357,7 +357,9 @@ export abstract class CellDLSVGElement {
 
     startMove(_svgPoint: PointLike, _options: ElementMoveOptions={}) {}
 
-    move(_svgPoint: PointLike, _options: ElementMoveOptions={}) {}
+    move(_svgPoint: PointLike, _options: ElementMoveOptions={}): boolean {
+        return false
+    }
 
     endMove() {
         // Update dimensions in case the element has been moved by a sub-class

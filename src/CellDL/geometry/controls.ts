@@ -193,6 +193,7 @@ export class ControlRect {
     #normalisedCentre!: Point
     #moveOffset: Point = new Point()
     #resizeBottomRight: Point = new Point()
+    #resizeCentroid: Point = new Point()
     #resizeTopLeft: Point|undefined
     #svgElement: SVGRectElement | null = null
 
@@ -263,15 +264,16 @@ export class ControlRect {
         this.#moveOffset = Point.fromPoint(PointMath.subtract(this.#edgeAlign ? this.#topLeft : this.#centroid, point))
     }
 
-    move(point: PointLike, options: GridAlignOptions={}) {
+    move(point: PointLike, options: GridAlignOptions={}): boolean {
         const position = this.#moveOffset?.add(point)
-        this.reposition(this.#gridAligned ? editGuides.gridAlign(position, options) : position)
+        return this.reposition(this.#gridAligned ? editGuides.gridAlign(position, options) : position)
     }
 
 //==============================================================================
 
     startResize() {
         this.#resizeTopLeft = Point.fromPoint(this.#topLeft)
+        this.#resizeCentroid = Point.fromPoint(this.#centroid)
         this.#resizeBottomRight = Point.fromPoint(this.#bottomRight)
     }
 
@@ -285,13 +287,13 @@ export class ControlRect {
                     this.#topLeft.point = this.#resizeTopLeft.add(topLeftDelta)
                     this.#bottomRight.point = this.#resizeBottomRight.add(bottomRightDelta)
                 }
-                this.#size = this.#size.add(sizeChange)
-                this.#centroid.point = this.#centroid.point
+                this.#centroid.point = this.#resizeCentroid
                                         .add(Point.fromPoint(topLeftDelta).scale(this.#normalisedCentre))
                                         .add(Point.fromPoint(bottomRightDelta).scale({
                                                 x: 1 - this.#normalisedCentre.x,
                                                 y: 1 - this.#normalisedCentre.y
                                             }))
+                this.#size = this.#size.add(sizeChange)
             } else {
                 // This case is currently not used and untested...
                 const topLeft = this.#resizeTopLeft.add(topLeftDelta)
@@ -315,18 +317,25 @@ export class ControlRect {
      *
      * @param centroid - The new position of the rectangle's centroid or top-left corner.
      */
-    reposition(position: PointLike) {
+    reposition(position: PointLike): boolean {
         if (this.#edgeAlign) {
-            const topLeftDelta = this.#topLeft.point.subtract(position)
-            this.#topLeft.point = position
-            this.#bottomRight.point = PointMath.add(this.#topLeft.point, this.#size)
-            this.#centroid.point = this.#centroid.point.subtract(
-                                    Point.fromPoint(topLeftDelta).scale(this.#normalisedCentre))
+            const delta = this.#topLeft.point.subtract(position)
+            if (!delta.isZero()) {
+                this.#topLeft.point = position
+                this.#bottomRight.point = PointMath.add(this.#topLeft.point, this.#size)
+                this.#centroid.point = this.#centroid.point.subtract(delta)
+            return true
+            }
         } else {
-            this.#centroid.point = position // this will check limits
-            this.#topLeft.point = this.#centroid.point.subtract(this.#size.scale(this.#normalisedCentre))
-            this.#bottomRight.point = PointMath.add(this.#topLeft.point, this.#size)
+            const delta = this.#centroid.point.subtract(position)
+            if (!delta.isZero()) {
+                this.#centroid.point = position // this will check limits
+                this.#topLeft.point = this.#centroid.point.subtract(this.#size.scale(this.#normalisedCentre))
+                this.#bottomRight.point = PointMath.add(this.#topLeft.point, this.#size)
+            return true
+            }
         }
+        return false
     }
 
     svg(attributes: StringProperties = {}) {

@@ -58,11 +58,14 @@ export class CompartmentElement extends BoundedElement {
         }
     }
 
-    move(svgPoint: PointLike, options: ElementMoveOptions={}) {
-        super.move(svgPoint, options)
-        if (this.#resizer) {
-            this.#resizer.move(this.centroid, options)
+    move(svgPoint: PointLike, options: ElementMoveOptions={}): boolean {
+        if (super.move(svgPoint, options)) {
+            if (this.#resizer) {
+                this.#resizer.move(this.centroid, options)
+            }
+            return true
         }
+        return false
     }
 
     endMove() {
