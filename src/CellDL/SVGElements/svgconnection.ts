@@ -220,7 +220,7 @@ export class SvgConnection extends CellDLSVGElement {
             strokeStyle: getStrokeString(this.svgElement, {
                 colour: CONNECTION_COLOUR,
                 width: CONNECTION_WIDTH,
-                dashScale: CONNECTION_DASH
+                dashScale: 0   // CONNECTION_DASH
             })
         }
     }
