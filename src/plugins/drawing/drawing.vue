@@ -79,11 +79,12 @@ const toolGroups = vue.ref<ToolGroup[]>([
                 id: toolId('draw-closed-compartment'),
                 icon: 'SquircleDashed'
             },
-            {
-                name: 'Membrane segment',
-                id: toolId('draw-membrane-segment'),
-                icon: 'Tally2'
-            }
+// TEMP -- until implemented...
+//            {
+//                name: 'Membrane segment',
+//                id: toolId('draw-membrane-segment'),
+//                icon: 'Tally2'
+//            }
         ]
     },
     {
