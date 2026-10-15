@@ -320,7 +320,7 @@ export class ControlRect {
     reposition(position: PointLike): boolean {
         if (this.#edgeAlign) {
             const delta = this.#topLeft.point.subtract(position)
-            if (!delta.isZero()) {
+            if (!delta.isZero) {
                 this.#topLeft.point = position
                 this.#bottomRight.point = PointMath.add(this.#topLeft.point, this.#size)
                 this.#centroid.point = this.#centroid.point.subtract(delta)
@@ -328,7 +328,7 @@ export class ControlRect {
             }
         } else {
             const delta = this.#centroid.point.subtract(position)
-            if (!delta.isZero()) {
+            if (!delta.isZero) {
                 this.#centroid.point = position // this will check limits
                 this.#topLeft.point = this.#centroid.point.subtract(this.#size.scale(this.#normalisedCentre))
                 this.#bottomRight.point = PointMath.add(this.#topLeft.point, this.#size)
