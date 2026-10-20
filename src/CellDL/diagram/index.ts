@@ -644,7 +644,7 @@ export class CellDLDiagram {
     #addMoveableObject(object: CellDLObject) {
         this.#objects.set(object.id, object)
         this.#spatialIndex.add(object)
-        if (object.hasEditGuides) {
+        if (object.isMoveable) {
             editGuides.addGuide(<CellDLComponent>object)
         }
         componentLibraryPlugin.addComponent(object)
@@ -1041,7 +1041,7 @@ export class CellDLDiagram {
         for (const storedObject of undoState.storedObjects.values()) {
             storedObject.restoreSvgElement() // adds SVG element to DOM
             const celldlObject = storedObject.celldlObject
-            if (celldlObject.isComponent) {
+            if (celldlObject.isMoveable) {
                 editGuides.addGuide(<CellDLComponent>celldlObject)
             }
             this.#objects.set(celldlObject.id, celldlObject)
@@ -1086,7 +1086,7 @@ export class CellDLDiagram {
         if (undoState) {
             undoState.storeObject(celldlObject)
         }
-        if (celldlObject.isComponent) {
+        if (celldlObject.isMoveable) {
             editGuides.removeGuide(<CellDLComponent>celldlObject)
         }
         celldlObject.celldlSvgElement?.remove() // Will remove SVG element from DOM

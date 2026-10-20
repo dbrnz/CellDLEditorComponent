@@ -146,10 +146,6 @@ export abstract class CellDLObject {
         return this.#description
     }
 
-    get hasEditGuides() {
-        return false
-    }
-
     get id(): string {
         return this.uri.id()
     }
@@ -362,14 +358,14 @@ export class CellDLMoveableObject extends CellDLObject {
 
     #boundedElement: BoundedElement|undefined
 
+    get isMoveable() {
+        return true
+    }
+
     startMove(svgPoint: PointLike, options: ElementMoveOptions={}) {
         // Finding alignment guides as we move
         editGuides.aligning(this, true)
         super.startMove(svgPoint, options)
-    }
-
-    get isMoveable() {
-        return true
     }
 
     move(svgPoint: PointLike, options: ElementMoveOptions={}) {
@@ -403,10 +399,6 @@ export class CellDLAnnotation extends CellDLMoveableObject {
     static celldlTypeName = 'Annotation'
 
     #annotationElement: CompartmentElement|undefined
-
-    get hasEditGuides() {
-        return true
-    }
 
     assignSvgElement(svgElement: SVGGraphicsElement, align: boolean) {
         this.#annotationElement = new CompartmentElement(this, svgElement, {
@@ -536,10 +528,6 @@ export class CellDLComponent extends CellDLConnectedObject {
 
     get interfacePorts() {
         return this.#interfacePorts
-    }
-
-    get hasEditGuides() {
-        return true
     }
 
     move(svgPoint: PointLike, options: ElementMoveOptions={}) {
