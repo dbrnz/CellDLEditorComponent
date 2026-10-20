@@ -87,6 +87,9 @@
 #svg-container .active:not(.celldl-Connection) {
     stroke: var(--active) !important;
 }
+#svg-container .active.gripper {
+    stroke: none !important;
+}
 #svg-container .selected:not(.celldl-Connection) {
     stroke: var(--selected) !important;
 }

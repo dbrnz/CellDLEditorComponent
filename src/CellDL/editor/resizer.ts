@@ -200,6 +200,9 @@ export class Resizer {
             const svgElement = controlPoint.createSvgElement(this.#editorFrame, styles[index])
             // biome-ignore lint/style/noNonNullAssertion: index is in range
             svgElement.style.setProperty('cursor', cursors[index]!)
+            if (styles[index]?.startsWith('gripper-')) {
+                svgElement.classList.add('gripper')
+            }
             svgElement.dataset.parentId = this.#objectId
             svgElement.dataset.resizerId = this.#id
             svgElement.dataset.controlIndex = `${index}`
