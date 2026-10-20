@@ -375,11 +375,14 @@ export abstract class CellDLSVGElement {
     }
 
     resize(topLeftDelta: PointLike, bottomRightDelta: PointLike) {
-        if (this.#startResizeDims) {
-            modifyRectDimensions(this.#selectionElement as SVGRectElement,
-                                 this.#startResizeDims, topLeftDelta, bottomRightDelta)
+        if (!PointMath.isZero(topLeftDelta) || !PointMath.isZero(bottomRightDelta)) {
+            if (this.#startResizeDims) {
+                modifyRectDimensions(this.#selectionElement as SVGRectElement,
+                                     this.#startResizeDims, topLeftDelta, bottomRightDelta)
+            }
+            this.#updateBounds()
+            notifyChanges()
         }
-        this.#updateBounds()
     }
 
     endResize() {
