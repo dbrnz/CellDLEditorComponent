@@ -123,6 +123,7 @@
 }
 #svg-container .draw-compartment-inner {
     fill: var(--editor-compartment-fill);
+    opacity: 0.2;
     stroke: var(--editor-membrane-colour);
     stroke-width: var(--editor-membrane-width);
     rx: calc(var(--editor-membrane-radius) - var(--editor-membrane-gap)/2) /* See DOUBLE_BOUNDARY_OFFSET */
