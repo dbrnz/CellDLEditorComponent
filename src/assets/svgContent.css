@@ -64,6 +64,16 @@
     stroke-width: 1;
     stroke-opacity: 0.8;
 }
+#svg-container .axis-guide {
+    stroke: #080;
+    stroke-width: 0.7;
+    stroke-opacity: 0.8;
+}
+#svg-container .axis-guide.visible {
+    stroke: #08f;
+    stroke-width: 1;
+    stroke-opacity: 0.8;
+}
 
 /* Control points */
 #svg-container .control-point {

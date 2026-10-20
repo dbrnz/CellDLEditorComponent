@@ -173,11 +173,11 @@ class IntervalGuide {
     #svgElement: SVGPathElement
     #useCount: number = 0
 
-    constructor(position: number, type: string, extent: [number, number]) {
+    constructor(position: number, type: string, extent: [number, number], axisGuide: boolean=false) {
         this.#centre = position
         this.#useCount = 1
         this.#svgElement = document.createElementNS(SVG_URI, 'path')
-        this.#svgElement.classList.add('alignment-guide')
+        this.#svgElement.classList.add(axisGuide ? 'axis-guide' : 'alignment-guide')
         if (type === 'H') {
             this.#svgElement.setAttribute('d', `M${extent[0]},${position}h${extent[1]}`)
         } else {
@@ -221,6 +221,7 @@ class IntervalGuide {
 
 class ComponentGuideGroup {
     #svgGroup: SVGGElement
+    #axis: IntervalGuide|undefined
     #intervalGuides: IntervalGuide[] = []
     #lastMatched: Map<string, IntervalGuide> = new Map()
     #extent: [number, number]
@@ -253,10 +254,27 @@ class ComponentGuideGroup {
         return guide
     }
 
+    addAxis() {
+        if (!this.#axis) {
+            this.#axis = new IntervalGuide(0, this.#type, this.#extent, true)
+            this.#svgGroup.appendChild(this.#axis.svgElement)
+        }
+    }
+
+    removeAxis() {
+        if (this.#axis) {
+            this.#svgGroup.removeChild(this.#axis.svgElement)
+            this.#axis = undefined
+        }
+    }
+
     #clearLastMatched(componentId: string) {
         if (this.#lastMatched.has(componentId)) {
             this.#lastMatched.get(componentId)?.show(false)
             this.#lastMatched.delete(componentId)
+        }
+        if (this.#axis) {
+            this.#axis.show(false)
         }
     }
 
@@ -289,6 +307,8 @@ class ComponentGuideGroup {
             if (this.#intervalGuides[n].useCount <= 0) {
                 this.#intervalGuides.splice(n, 1)
             }
+        } else if (this.#axis && Math.abs(position) < EPSILON) {
+            this.#axis.show(false)
         }
     }
 
@@ -316,6 +336,8 @@ class ComponentGuideGroup {
             lastMatched.show()
             this.#lastMatched.set(componentId, lastMatched)
             return lastMatched.centre
+        } else if (this.#axis && Math.abs(position) < EPSILON) {
+            this.#axis.show()
         }
         return null
     }
@@ -337,11 +359,6 @@ class ComponentGuides {
         this.showAxes(!!DEFAULT_VIEW_STATE.showAxes)
     }
 
-    #addAxes() {
-        this.#horizontalGuideGroup.add('X-axis', 0)
-        this.#verticalGuideGroup.add('Y-axis', 0)
-    }
-
     addComponent(component: CellDLMoveableObject) {
         if (!this.#knownComponents.has(component)) {
             const centroid = component.celldlSvgElement?.centroid as Point
@@ -352,10 +369,13 @@ class ComponentGuides {
     }
 
     aligning(component: CellDLMoveableObject, aligning: boolean) {
+        const centroid = component.celldlSvgElement?.centroid as Point
         if (aligning) {
-            this.removeComponent(component)
+            this.#horizontalGuideGroup.remove(component.id, centroid.y)
+            this.#verticalGuideGroup.remove(component.id, centroid.x)
         } else {
-            this.addComponent(component)
+            this.#horizontalGuideGroup.add(component.id, centroid.y)
+            this.#verticalGuideGroup.add(component.id, centroid.x)
         }
     }
 
@@ -388,11 +408,11 @@ class ComponentGuides {
 
     showAxes(show: boolean) {
         if (show) {
-            this.#addAxes()
-            this.#showAxes()
+            this.#horizontalGuideGroup.addAxis()
+            this.#verticalGuideGroup.addAxis()
         } else {
-            this.#horizontalGuideGroup.remove('X-axis', 0)
-            this.#verticalGuideGroup.remove('Y-axis', 0)
+            this.#horizontalGuideGroup.removeAxis()
+            this.#verticalGuideGroup.removeAxis()
         }
     }
 }
