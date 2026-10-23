@@ -24,15 +24,15 @@ import type {
     CellDLConnectedObject,
     CellDLObject
 } from '#editor/celldlObjects'
-import { Bounds, ComputedValue, RestrictedValue } from '#editor/geometry'
+import { Bounds } from '#editor/geometry'
 import { ControlPoint } from '#editor/geometry/controls'
 import { Point } from '#root/utils/points'
 import { MEMBRANE_GAP } from '#root/utils/styling'
 import { svgRect } from '#root/utils/svgUtils'
 
-import { type CellDLEditor, CONTEXT_MENU, getElementId } from '.'
+import { type CellDLEditor, CONTEXT_MENU } from '.'
 import { editGuides } from './editguides'
-import { EDITOR_FRAME_ID, type EditorFrame } from './editorframe'
+import type { EditorFrame } from './editorframe'
 
 //==============================================================================
 
@@ -42,24 +42,16 @@ const SELECTION_BOX_ID = 'editor-selection-box'
 
 export class BoxMaker {
     #bottomRight: ControlPoint
-    #controlPoints: ControlPoint[] = []
     #doubleBoundary: [SVGRectElement | null, SVGRectElement | null] = [null, null]
     #doubleWalled: boolean
     #drawing: boolean = false
     #editor: CellDLEditor
     #editorFrame: EditorFrame
-    #movePoint: ControlPoint | null = null
-    #panStart: Point | null = null
-    #panTopLeft: Point | null = null
     #selectedObjects: Map<string, CellDLObject> = new Map()
     #selectionRect: SVGRectElement | null = null
     #size: Point
     #startPoint: Point
     #topLeft: ControlPoint
-    #xMin: RestrictedValue | null = null
-    #xMax: RestrictedValue | null = null
-    #yMin: RestrictedValue | null = null
-    #yMax: RestrictedValue | null = null
 
     constructor(editor: CellDLEditor, startPoint: DOMPoint, doubleWalled: boolean=false) {
         this.#editor = editor
@@ -162,55 +154,18 @@ export class BoxMaker {
                 this.#drawTo(point)
             } else if (event.type === 'pointerup') {
                 this.#drawing = false
-                // Allow new BoxMaker to be moved and resized
-                this.drawControlHandles()
             }
             return true
-        } else if (this.#movePoint || this.#panStart) {
-            if (event.type === 'pointermove') {
-                if (this.#movePoint !== null) {
-                    this.#movePoint.point = editGuides.gridAlign(point)
-                } else if (this.#panStart !== null) {
-                    const delta = this.#panStart.subtract(point)
-                    // biome-ignore lint/style/noNonNullAssertion: panStart ==> panTopLeft
-                    this.#topLeft.point = editGuides.gridAlign(this.#panTopLeft!.subtract(delta))
-                    this.#bottomRight.point = this.#topLeft.point.add(this.#size)
-                }
-                this.#updateSelectionRect(this.#movePoint !== null)
-                this.#redrawControlHandles()
-            } else if (event.type === 'pointerup') {
-                this.#movePoint = null
-                this.#panStart = null
-            }
-            return true
-        } else {
-            const element = event.target as SVGGraphicsElement
-            const currentId = getElementId(element)
-            if (currentId === SELECTION_BOX_ID && element.parentElement?.id === EDITOR_FRAME_ID) {
-                const currentIndex = element.dataset.controlIndex ? +element.dataset.controlIndex : -1
-                if (event.type === 'pointerdown') {
-                    if (currentIndex >= 0) {
-                        // biome-ignore lint/style/noNonNullAssertion: currentIndex is in range
-                        const controlPoint = this.#controlPoints[currentIndex]!
-                        this.#movePoint = controlPoint
-                        this.#panStart = null
-                    } else {
-                        this.#movePoint = null
-                        this.#panStart = Point.fromPoint(point)
-                        this.#panTopLeft = Point.fromPoint(this.#topLeft.point)
-                    }
-                }
-                return true
-            }
         }
         return false
     }
 
-    close() {
+    close(clearSelected: boolean=true) {
         this.#updateContextMenu(false)
         if (this.#selectionRect) {
-            this.#unsetSelectedObjects()
-            this.clearControlHandles()
+            if (clearSelected) {
+                this.#unsetSelectedObjects()
+            }
             this.#editorFrame.removeElement(this.#selectionRect)
             this.#selectionRect = null
 
@@ -222,70 +177,7 @@ export class BoxMaker {
         }
     }
 
-    clearControlHandles() {
-        for (const controlPoint of this.#controlPoints) {
-            controlPoint.removeSvgElement()
-        }
-        this.#controlPoints = []
-    }
-
-    drawControlHandles() {
-        if (!this.#selectionRect) {
-            return
-        }
-        this.#xMin = new RestrictedValue(this.#topLeft.x)
-        this.#xMax = new RestrictedValue(this.#bottomRight.x)
-        this.#xMin.reassignMaximum(this.#xMax)
-        this.#xMax.reassignMinimum(this.#xMin)
-        // biome-ignore lint/style/noNonNullAssertion: we have both xMin and xMax
-        const xMid = new ComputedValue((() => (this.#xMin!.value + this.#xMax!.value) / 2).bind(this))
-
-        this.#yMin = new RestrictedValue(this.#topLeft.y)
-        this.#yMax = new RestrictedValue(this.#bottomRight.y)
-        this.#yMin.reassignMaximum(this.#yMax)
-        this.#yMax.reassignMinimum(this.#yMin)
-        // biome-ignore lint/style/noNonNullAssertion: we have both yMin and yMax
-        const yMid = new ComputedValue((() => (this.#yMin!.value + this.#yMax!.value) / 2).bind(this))
-
-        this.#controlPoints = [
-            new ControlPoint(this.#xMin, this.#yMin),
-            new ControlPoint(xMid, this.#yMin),
-            new ControlPoint(this.#xMax, this.#yMin),
-            new ControlPoint(this.#xMax, yMid),
-            new ControlPoint(this.#xMax, this.#yMax),
-            new ControlPoint(xMid, this.#yMax),
-            new ControlPoint(this.#xMin, this.#yMax),
-            new ControlPoint(this.#xMin, yMid)
-        ]
-        // biome-ignore lint/style/noNonNullAssertion: controlPoints is 8 long
-        this.#topLeft = this.#controlPoints[0]!
-        // biome-ignore lint/style/noNonNullAssertion: controlPoints is 8 long
-        this.#bottomRight = this.#controlPoints[4]!
-        let index = 0
-        const styles = ['', 'gripper-h', '', 'gripper-v', '', 'gripper-h', '', 'gripper-v']
-        const cursors = ['move', 'ns-resize', 'move', 'ew-resize', 'move', 'ns-resize', 'move', 'ew-resize']
-        for (const controlPoint of this.#controlPoints) {
-            const svgElement = controlPoint.createSvgElement(this.#editorFrame, styles[index])
-            // biome-ignore lint/style/noNonNullAssertion: index is in range
-            svgElement.style.setProperty('cursor', cursors[index]!)
-            svgElement.dataset.parentId = this.#selectionRect.id
-            svgElement.dataset.controlIndex = `${index}`
-            index += 1
-        }
-        this.#movePoint = null
-        this.#selectionRect.style.setProperty('cursor', 'grab')
-        this.#updateContextMenu(this.count > 0)
-    }
-
-    #redrawControlHandles() {
-        for (const controlPoint of this.#controlPoints) {
-            controlPoint.redraw()
-        }
-        this.#updateContextMenu(this.count > 0)
-    }
-
     #setSelectedObjects() {
-// add to editor's set of selected objects...
         // biome-ignore lint/style/noNonNullAssertion: the editor has a diagram
         const selectedItems = this.#editor
             .celldlDiagram!.objectsContainedIn(this.bounds)
@@ -323,7 +215,6 @@ export class BoxMaker {
     #updateContextMenu(enabled: boolean) {
         this.#editor.enableContextMenuItem(CONTEXT_MENU.DELETE, enabled)
         this.#editor.enableContextMenuItem(CONTEXT_MENU.GROUP_OBJECTS, enabled)
-        this.#editor.enableContextMenuItem(CONTEXT_MENU.SELECT, enabled)
     }
 
     updateSelectedObjects() {

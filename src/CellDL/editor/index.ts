@@ -1073,9 +1073,10 @@ export class CellDLEditor {
                      || this.#editorMode === EDITOR_MODE.DrawRegion) {
                         this.#boxMaker.pointerEvent(event, svgPoint)
                         this.#addCompartmentRegion(this.#editorMode === EDITOR_MODE.DrawRegion)
-                        this.#closeBoxMaker()
-                    } else if (!this.#boxMaker.pointerEvent(event, svgPoint)) {
-                        this.#closeBoxMaker()
+                        this.#closeBoxMaker(true)
+                    } else {
+                        this.#boxMaker.pointerEvent(event, svgPoint)
+                        this.#closeBoxMaker(false)  // Keep selected objects selected
                     }
                 }
                 this.#boxMaking = false
@@ -1083,9 +1084,9 @@ export class CellDLEditor {
         }
     }
 
-    #closeBoxMaker() {
+    #closeBoxMaker(clearSelected: boolean=true) {
         if (this.#boxMaker) {
-            this.#boxMaker.close()
+            this.#boxMaker.close(clearSelected)
             this.#boxMaker = null
         }
     }
