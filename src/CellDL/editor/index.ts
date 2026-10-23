@@ -770,7 +770,7 @@ export class CellDLEditor {
 
     #selectionClickEvent(event: MouseEvent, _element: SVGGraphicsElement, clickedObject: CellDLObject|null) {
         if (clickedObject === null
-         || !event.metaKey
+         || !(event.metaKey || event.shiftKey)
          || !this.selectionSet.firstMoveableObject
          || !clickedObject.isMoveable
         ) {
@@ -779,30 +779,14 @@ export class CellDLEditor {
         }
         // Select when active object is clicked
         if (clickedObject && clickedObject === this.currentObject) {
-            if (event.metaKey) {
+            if (event.metaKey || event.shiftKey) {
                 if (clickedObject.selected) {
                     this.#unsetSelectedObject(clickedObject)
                 } else {
                     this.setSelectedObject(clickedObject)
                 }
             } else {
-                if (event.shiftKey
-                 && clickedObject.isMoveable
-                 && this.selectionSet.firstMoveableObject
-                 && clickedObject !== this.selectionSet.firstMoveableObject) {
-                    const boundingBox = this.selectionSet.firstMoveableObject?.celldlSvgElement?.svgBounds().union(clickedObject.celldlSvgElement!.svgBounds())
-                    if (boundingBox) {
-                        const selectedObjects = this.celldlDiagram!.objectsContainedIn(boundingBox)
-                                                                    .filter(c => c.exact)
-                                                                    .map(c => c.object)
-                                                                    .filter(c => c.isComponent)
-                        for (const selectedObject of selectedObjects) {
-                            this.setSelectedObject(selectedObject)
-                        }
-                    }
-                } else {
-                    this.setSelectedObject(clickedObject)
-                }
+                this.setSelectedObject(clickedObject)
             }
         }
     }
