@@ -125,11 +125,11 @@ export function getElementId(element: SVGGraphicsElement): string {
 
 //==============================================================================
 
-const SVG_PANEL_ID = 'svg-panel'
 export type PointerEventHandler = (eventType: string, svgElement: SVGGraphicsElement, svgCoords: PointLike) => boolean
 
 //==============================================================================
 
+const SVG_PANEL_ID = 'svg-panel'
 
 export class CellDLEditor {
     static instance: CellDLEditor | null = null

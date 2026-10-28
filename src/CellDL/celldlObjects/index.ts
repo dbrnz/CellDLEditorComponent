@@ -363,7 +363,7 @@ export class CellDLMoveableObject extends CellDLObject {
     }
 
     startMove(svgPoint: PointLike, options: ElementMoveOptions={}) {
-        // Finding alignment guides as we move
+        // We are finding alignment guides as we move and don't want to find ours
         editGuides.aligning(this, true)
         super.startMove(svgPoint, options)
     }
@@ -376,7 +376,7 @@ export class CellDLMoveableObject extends CellDLObject {
 
     endMove() {
         super.endMove()
-        // We've stopped finding our alignment guides
+        // We've stopped moving and want our alignment guides available
         editGuides.aligning(this, false)
     }
 
@@ -560,15 +560,6 @@ export class CellDLCompartment extends CellDLConnectedObject {
     static readonly celldlStyleClass = CELLDL_STYLE_CLASS.Compartment
     static celldlTypeName = 'Compartment'
 
-
-    constructor(
-        uri: NamedNode,
-        objectTemplate: ObjectTemplate,
-        celldlDiagram: CellDLDiagram,
-        updateStore: boolean=true
-    ) {
-        super(uri, objectTemplate, celldlDiagram, updateStore)
-    }
     #associatedComponents: CellDLMoveableObject[] = []
     #compartmentElement: CompartmentElement|undefined
 

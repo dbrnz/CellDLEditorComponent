@@ -248,7 +248,7 @@ export class PathElement {
         return false
     }
 
-    move(svgPoint: PointLike, options: ElementMoveOptions={}) {
+    move(svgPoint: PointLike, options: ElementMoveOptions={}): boolean {
         let redraw = false
         if (options.moveEntireConnection) {
             this.pathPoints.forEach((pathPoint) => {

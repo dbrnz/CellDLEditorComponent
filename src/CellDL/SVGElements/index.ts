@@ -29,6 +29,7 @@ import { svgCircle, type RectDimensions, getRectDimensions, modifyRectDimensions
 import { CELLDL_STYLE_CLASS, type CellDLObject } from '#editor/celldlObjects'
 import { Bounds, type PointMoveOptions, type RestrictedValue } from '#editor/geometry'
 import { Transform } from '#editor/geometry/transforms'
+import { notifyChanges } from '#editor/editor'
 
 //==============================================================================
 
@@ -341,6 +342,8 @@ export abstract class CellDLSVGElement {
         }
         return { }
     }
+
+//==============================================================================
 
     /**
      * Check if an object can be moved.
