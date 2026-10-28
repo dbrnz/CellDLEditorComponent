@@ -163,7 +163,7 @@ const menuItems = [
                 }
             },
             {
-                label: 'Open...',
+                label: 'Open',
                 shortcut: isWindowsOrLinux ? 'Ctrl+O' : isMacOs ? '⌘O' : undefined,
                 command: () => {
                     emit('file-action', 'open')
