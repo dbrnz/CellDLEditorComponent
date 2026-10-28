@@ -21,7 +21,7 @@ limitations under the License.
 import * as vue from 'vue'
 
 import { Point, type PointLike, PointMath } from '#root/utils/points'
-import { CONNECTION_SPLAY_PADDING, MAX_CONNECTION_SPLAY_PADDING } from '#root/utils/styling'
+import { CONNECTION_SPLAY_PADDING, MAX_CONNECTION_SPLAY_PADDING, SVG_ICON_HEIGHT } from '#root/utils/styling'
 import { CONNECTION_WIDTH, SELECTION_STROKE_WIDTH } from '#root/utils/styling'
 import type { Styling } from '#root/utils/styling'
 import { svgCircle, type RectDimensions, getRectDimensions, modifyRectDimensions, svgRectElement } from '#root/utils/svgUtils'
@@ -725,7 +725,7 @@ export abstract class CellDLSVGElement {
      * @param imageData A depiction of the element as a data URL.
      */
     async updateImageElement(imageData: string) {
-        this.svgElement.innerHTML = `<image href="${imageData}"/>`
+        this.svgElement.innerHTML = `<image href="${imageData}" height="${SVG_ICON_HEIGHT}"/>`
         await vue.nextTick()            // Wait for image to render
         this.#updatedSvgElement()
     }

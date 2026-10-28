@@ -85,6 +85,10 @@ export type StrokeAttributes = {
 
 //==============================================================================
 
+export const SVG_ICON_HEIGHT = 30
+
+//==============================================================================
+
 export const CONNECTION_ARROW_SIZE = [4, 4] // [W, H] pixels
 export const CONNECTION_SPLAY_PADDING = 16 // If <= 1.0 then fraction of elements width and height else pixels
 export const MAX_CONNECTION_SPLAY_PADDING = 20 // pixels
