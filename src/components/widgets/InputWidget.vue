@@ -41,7 +41,7 @@
     .bottom-margin(v-else)
         FloatLabel(variant="on")
             InputText(
-                :modelValue="inputValue"
+                :modelValue="textValue"
                 @value-change="inputTextChange"
                 class="w-full"
                 size="small"
@@ -51,6 +51,7 @@
 
 <script setup lang="ts">
 import * as vue from 'vue'
+import { logging } from '#root/utils/logging'
 import { useThemeCssVariables } from '#root/utils/themeCssVariables'
 
 useThemeCssVariables('floatlabel')
@@ -92,24 +93,34 @@ let oldValue = (props.possibleValues === undefined)
 
 const discreteValue = vue.computed<locApi.IUiJsonDiscreteInputPossibleValue>({
     get() {
-        return (inputValue.value as locApi.IUiJsonDiscreteInputPossibleValue)
+        const value = (inputValue.value as locApi.IUiJsonDiscreteInputPossibleValue)
+        oldValue = value.value
+        logging.trace('discreteValue', { itemId: props.itemId, oldValue })
+        return value
     },
     set(_: ValueType) {
     }
 })
 
 const scalarValue = vue.computed<string>(() => {
-    const value = String(inputValue.value).trim()
+    oldValue = String(inputValue.value).trim()
     if (scalarType) {
-        const valueFields = value.split(/\s+/)
+        const valueFields = oldValue.split(/\s+/)
         const valueString = valueFields[0] as string
         let valueUnits = valueFields[1]
         if (valueUnits && props.units && ucum.convert(1, valueUnits, props.units) === 1) {
             valueUnits = undefined
         }
-        return valueUnits ? `${valueString} ${valueUnits}` : valueString
+        oldValue = valueUnits ? `${valueString} ${valueUnits}` : valueString
     }
-    return value
+    logging.trace('scalarValue', { itemId: props.itemId, oldValue })
+    return oldValue
+})
+
+const textValue = vue.computed<string>(() => {
+    oldValue = String(inputValue.value).trim()
+    logging.trace('textValue', { itemId: props.itemId, oldValue })
+    return oldValue
 })
 
 // Some methods to handle a scalar value using an input text and a slider.
@@ -160,6 +171,7 @@ function inputTextChange(newValue: string) {
         }
         newValue = valueUnits ? `${valueString} ${valueUnits}` : valueString
     }
+    logging.trace('inputTextChange', { itemId: props.itemId, oldValue, newValue })
     if (newValue !== oldValue) {
         emitChange(newValue)
     }
@@ -187,6 +199,9 @@ function validateInput(newValue: string) {
                 }
             }
         }
+    }
+    if (errorMessage.value === '') {
+        inputTextChange(newValue)
     }
 }
 
