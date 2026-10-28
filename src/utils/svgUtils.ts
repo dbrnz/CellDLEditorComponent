@@ -351,7 +351,7 @@ export function svgFromDataUrl(dataUri: string): string|undefined {
 
 export function getFillString(svgElement: SVGGraphicsElement): string {
     const svgText = svgElement.outerHTML
-    const dataUrl = svgText.match(/<image href="(?<dataUrl>.*)"><\/image>/)
+    const dataUrl = svgText.match(/<image href="(?<dataUrl>.*)".*><\/image>/)
     if (!dataUrl) {
         return ''
     }
