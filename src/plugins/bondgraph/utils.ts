@@ -27,10 +27,14 @@ import type { BGBaseComponent } from '.'
 
 //==============================================================================
 
+// Default shape is `rect`
+export type BGElementShape = 'circle' | 'rect'
+
 export interface BGElementStyle {
     text: string
     background: string
-    border?: string
+    border?: string,
+    shape?: BGElementShape
 }
 
 export interface BGComponentDefinition {
