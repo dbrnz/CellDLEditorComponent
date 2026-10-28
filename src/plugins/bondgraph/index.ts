@@ -48,6 +48,7 @@ import {
     type PropertyGroup,
     type ValueChange
 } from '#root/utils/editor-types'
+import { logging } from '#root/utils/logging'
 import type { ConnectionStatus, PluginInterface } from '#root/plugins'
 import type {
     Styling
@@ -848,6 +849,7 @@ export class BondgraphPlugin implements PluginInterface {
 
     async updateObjectProperties(celldlObject: CellDLObject, panelId: PANEL_ID, itemId: string, value: ValueChange,
                                  componentProperties: PropertyGroup[]) {
+        logging.trace('updateObjectProperties', { objectId: celldlObject.id, newValue: value.newValue })
         if (panelId === PANEL_ID.PROPERTIES_PANEL) {
             const itemGroupId = itemId.split('/')[0]
             if (!itemGroupId) {
@@ -908,6 +910,7 @@ export class BondgraphPlugin implements PluginInterface {
     //==================================
 
     async updatedComponentStyling(celldlObject: CellDLObject, styling: Styling) {
+        logging.trace('updatedComponentStyling', { objectId: celldlObject.id, styling })
         const pluginData = (<PluginData>celldlObject.pluginData(this.id))
         if (styling.fillStyle) {   // we don't need styleType, just the presence of `fillStyle` in the `styling` object
             const fillString = styling.fillStyle
@@ -926,6 +929,7 @@ export class BondgraphPlugin implements PluginInterface {
     async #updateElementProperties(value: ValueChange, itemId: string,
                                    celldlObject: CellDLObject, groupTemplate: IndexedPropertyGroup) {
         const pluginData = (<PluginData>celldlObject.pluginData(this.id))
+        logging.trace('updateElementProperties', { groupId: groupTemplate.groupId, itemId: itemId })
 
         // check all groups belonging to the PROPERTIES_PANEL
         if (groupTemplate.groupId === BG_PROPERTY_GROUP_ID.ElementProperties) {
