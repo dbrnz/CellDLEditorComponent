@@ -47,6 +47,7 @@ export interface LatexMathSvgOptions {
     'min-height'?: string
     'min-width'?: string
     padding?: string
+    shape?: string
     'vertical-align'?: string
 }
 
@@ -220,7 +221,9 @@ function getLengthFromOptions(options: LatexMathSvgOptions, key: string): number
 
 //==============================================================================
 
-function latexToSvgRect(latex: string, suffix: string,
+function latexToSvgRect(
+    latex: string,
+    suffix: string,
     options: LatexMathSvgOptions={},
     includeStyleRules:boolean=false): string
 {
@@ -231,35 +234,29 @@ function latexToSvgRect(latex: string, suffix: string,
     const gradient: string[] = []
     if (svgWidth && svgHeight) {
         let viewBox = getViewbox(svgElement)
-        const scale = [viewBox[2]/svgWidth, viewBox[3]/svgHeight]
-        const border = ('border' in options) ? getLengthFromOptions(options, 'border-width') : 0
+        const scale: [number, number] = [viewBox[2]/svgWidth, viewBox[3]/svgHeight]
+        const borderWidth = ('border' in options) ? getLengthFromOptions(options, 'border-width') : 0
+        const halfBorder: [number, number] = [ borderWidth*scale[0]/2, borderWidth*scale[1]/2 ]
         const padding = getLengthFromOptions(options, 'padding')
-        // @ts-expect-error: `scale` is two long
-        let width = scale[0]*Math.max(2*border + 2*padding + svgWidth, getLengthFromOptions(options, 'min-width'))
-        // @ts-expect-error: `scale` is two long
+        let width = scale[0]*Math.max(borderWidth + 2*padding + svgWidth, getLengthFromOptions(options, 'min-width'))
         const extrawidth = width - scale[0]*svgWidth
         const left = viewBox[0] - extrawidth/2
         let right = left + width
 
-        // @ts-expect-error: `scale` is two long
-        let height = scale[1]*Math.max(2*border + 2*padding + svgHeight, getLengthFromOptions(options, 'min-height'))
-        // @ts-expect-error: `scale` is two long
+        let height = scale[1]*Math.max(borderWidth + 2*padding + svgHeight, getLengthFromOptions(options, 'min-height'))
         const extraHeight = height - scale[1]*svgHeight
         let top = viewBox[1] - extraHeight/2
         let bottom = top + height
-        // @ts-expect-error: `scale` is two long
-        const rectSize = ` width="${round(width-2*border*scale[0])}" height="${round(height-2*border*scale[1])}"`
+        const rectSize = ` width="${round(width-2*halfBorder[0])}" height="${round(height-2*halfBorder[1])}"`
+
         if (suffix !== '') {
             const suffixLatex = (suffix !== '') ? `\\;${suffix}` : ''
             svgDocument = latexAsSvgDocument(`${latex}${suffixLatex}`)
             svgElement = (<Element>svgDocument.documentElement) as SVGSVGElement
             viewBox = getViewbox(svgElement)
-            // @ts-expect-error: `scale` is two long
             right = Math.max(right, viewBox[0] + viewBox[2] + scale[0]*padding)
-            // @ts-expect-error: `scale` is two long
-            top = Math.min(top, viewBox[1] - scale[1]*(padding + border))
-            // @ts-expect-error: `scale` is two long
-            bottom = Math.max(bottom, viewBox[1] + viewBox[3] + scale[1]*(padding + border))
+            top = Math.min(top, viewBox[1] - scale[1]*(padding + borderWidth))
+            bottom = Math.max(bottom, viewBox[1] + viewBox[3] + scale[1]*(padding + borderWidth))
 
             // We add `data-centre-x` and `data-centre-y` attributes to the root <svg> element,
             // giving the ratios needed to find the centre of the unsuffixed text.
@@ -268,7 +265,6 @@ function latexToSvgRect(latex: string, suffix: string,
             width = right - left
             height = bottom - top
         }
-        // @ts-expect-error: `scale` is two long
         let verticalAlign = scale[1]*getLengthFromOptions(options, 'vertical-align')
         if (verticalAlign) {
             bottom = -verticalAlign
@@ -276,37 +272,29 @@ function latexToSvgRect(latex: string, suffix: string,
         } else {
             verticalAlign = -bottom
         }
-        // @ts-expect-error: `scale` is two long
         svgElement.style.setProperty('vertical-align', pixelsToLength(verticalAlign/scale[1], 'ex'))
         viewBox[0] = round(left)
         viewBox[1] = round(top)
         viewBox[2] = round(width)
         viewBox[3] = round(height)
         svgElement.setAttribute('viewBox', viewBox.map(n => n.toString()).join(' '))
-        // @ts-expect-error: `scale` is two long
-        svgElement.setAttribute('width', pixelsToLength(width/scale[0], 'ex') as number)
-        // @ts-expect-error: `scale` is two long
-        svgElement.setAttribute('height', pixelsToLength(height/scale[1], 'ex') as number)
-
+        svgElement.setAttribute('width', pixelsToLength(width/scale[0], 'ex') as string)
+        svgElement.setAttribute('height', pixelsToLength(height/scale[1], 'ex') as string)
+        svgElement.setAttribute('preserveAspectRatio', 'none')
         const fill = getFillFromString(options.background, 'fill-gradient')
         gradient.push(...fill.gradient)
 
-        // @ts-expect-error: `scale` is two long
-        const stroke = border ? ` stroke="${options.border}" stroke-width="${round(scale[0]*border)}"` : ''
-        const radius = getLengthFromOptions(options, 'corner-radius');
-        // @ts-expect-error: `scale` is two long
+        const stroke = borderWidth > 0 ? ` stroke="${options.border}" stroke-width="${round(scale[0]*borderWidth)}"` : ''
+        const radius = options.shape !== 'circle' ? getLengthFromOptions(options, 'corner-radius') : (width+height)/4
         const cornerRadius = radius ? ` rx="${round(radius*scale[0])}"` : ''
-        // @ts-expect-error: `scale` is two long
-        const topLeft = `x="${round(viewBox[0]+border*scale[0])}" y="${round(viewBox[1]+border*scale[1])}"`
+        const topLeft = `x="${round(viewBox[0]+halfBorder[0])}" y="${round(viewBox[1]+halfBorder[1])}"`
         const rectClass = options.class ? ` class="${options.class}"` : ''
         const bgRect = `<rect ${topLeft}${rectSize} fill="${fill.fillAttribute}" data-fill-style="${fill.dataFillStyle}"${stroke}${cornerRadius}${rectClass}></rect>`
         svgElement.firstElementChild?.insertAdjacentHTML('afterend', bgRect)
 
         if (suffix !== '') {
-            // @ts-expect-error: `scale` is two long
-            const topLeft = `x="${viewBox[0]+border*scale[0]}" y="${viewBox[1]+border*scale[1]}"`;
-            // @ts-expect-error: `scale` is two long
-            const boundingRect = `<rect ${topLeft} width="${width-2*border*scale[0]}" height="${height-2*border*scale[1]}"></rect>`
+            const topLeft = `x="${viewBox[0]+halfBorder[0]}" y="${viewBox[1]+halfBorder[1]}"`;
+            const boundingRect = `<rect ${topLeft} width="${width-2*halfBorder[0]}" height="${height-2*halfBorder[1]}"></rect>`
             svgElement.insertAdjacentHTML('afterbegin', boundingRect)
         }
     }
