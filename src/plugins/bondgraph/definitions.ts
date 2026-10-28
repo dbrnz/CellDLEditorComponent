@@ -36,7 +36,7 @@ const ICON_MIN_HEIGHT = '4ex'
 const ICON_VERTICAL_ALIGN = '-1.5ex'
 const ICON_RADIUS = '6px'
 
-const MIN_BORDER = '0.2px'
+const MIN_BORDER = '0'
 const MIN_BORDER_COLOUR = 'grey'
 
 //==============================================================================
