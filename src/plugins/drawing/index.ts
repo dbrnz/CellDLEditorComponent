@@ -2,6 +2,7 @@
 //==============================================================================
 
 import type { MetadataStore } from '@celldl/metadata'
+import { RDFS } from '@celldl/rdf'
 
 import type {
     CellDLConnection,
@@ -72,12 +73,11 @@ export class DrawingPlugin implements PluginInterface {
     openDiagram(_uri: string, _rdfStore: MetadataStore) {
     }
 
-
     addPluginMetadataToStore(_rdfStore: MetadataStore) {
     }
 
     getPluginData(celldlObject: CellDLObject): object {
-        if (celldlObject.isCompartment) {
+        if (celldlObject.isCompartment || celldlObject.isAnnotation) {
             return {
                 managed: true
             }
@@ -122,16 +122,20 @@ export class DrawingPlugin implements PluginInterface {
             properties.forEach(group => {
                 if (group.groupId === STYLE_GROUP_ID) {
                     if (celldlObject.celldlSvgElement) {
-                        group.styling = celldlObject.celldlSvgElement.getStyle()
+                        group.styling = { ...celldlObject.celldlSvgElement.getStyle() }
                     }
                 }
             })
         }
     }
 
-    async updateObjectProperties(celldlObject: CellDLObject, panelId: PANEL_ID, itemId: string, value: ValueChange,
+    async updateObjectProperties(celldlObject: CellDLObject, _panelId: PANEL_ID, itemId: string, _value: ValueChange,
                                  _componentProperties: PropertyGroup[]) {
         celldlObject.celldlSvgElement?.updateElement()
+        if (itemId === RDFS.uri('label').value) {
+            // Reload object's panel properties as text style depends on the object having a label.
+            celldlObject.celldlDiagram.setPropertiesPanelObject(celldlObject)
+        }
     }
 
     async updatedComponentStyling(celldlObject: CellDLObject, styling: Styling) {

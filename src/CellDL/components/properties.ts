@@ -98,14 +98,6 @@ export function getItemProperty(celldlObject: CellDLObject,
         }
         return undefined
     }
-    if (itemTemplate.numeric) {
-        const valueUnits = value.split(' ')
-        return {
-            ...itemTemplate,
-            value:  Number(valueUnits[0]),
-            units: valueUnits[1]
-        } as ItemDetails
-    }
     return {
         ...itemTemplate,
         value: value
@@ -163,7 +155,7 @@ export class ObjectPropertiesPanel {
         for (const group of this.#componentPropertiesRef.value.groups) {
             group.items = []
         }
-        vue.provide<vue.Ref<ComponentProperties>>(`${panelId}-componentProperties`, this.#componentPropertiesRef)
+        vue.provide(`${panelId}-componentProperties`, this.#componentPropertiesRef)
     }
 
     get panelId() {
@@ -173,7 +165,7 @@ export class ObjectPropertiesPanel {
     setObjectProperties(celldlObject: CellDLObject|undefined) {
         if (!celldlObject) {
             this.#componentPropertiesRef.value.objectId = undefined
-        } else if (celldlObject.id !== this.#componentPropertiesRef.value.objectId) {
+        } else {
             this.#componentPropertiesRef.value.objectId = celldlObject.id
             for (const group of this.#componentPropertiesRef.value.groups) {
                 group.items.length = 0

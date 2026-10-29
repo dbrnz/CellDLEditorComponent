@@ -68,7 +68,7 @@ import type { BoundedElement } from '#editor/SVGElements/boundedelement'
 import { createCompartmentSvgElement } from '#editor/SVGElements/utils/compartment'
 import type { SvgConnection } from '#editor/SVGElements/svgconnection'
 
-import { type CellDLEditor, notifyChanges } from '#editor/editor'
+import { type CellDLEditor, notifyChanges, type PointerEventHandler } from '#editor/editor'
 import { editGuides } from '#editor/editor/editguides'
 import { undoRedo, type UndoState } from '#editor/diagram/undoredo'
 
@@ -227,6 +227,14 @@ export class CellDLDiagram {
         return this.#documentNode.value
     }
 
+    addPointerEventHandler(handlerId: string, handler: PointerEventHandler) {
+        this.#celldlEditor.addPointerEventHandler(handlerId, handler)
+    }
+
+    removePointerEventHandler(handlerId: string) {
+        this.#celldlEditor.removePointerEventHandler(handlerId  )
+    }
+
     domToSvgCoords(domCoords: PointLike): DOMPoint {
         // Transform from screen coordinates to SVG coordinates
         const dom_to_svg_transform: DOMMatrix | undefined = this.#svgDiagram?.getScreenCTM()?.inverse()
@@ -335,7 +343,7 @@ export class CellDLDiagram {
             this.#defsElement?.removeChild(defn)
         }
         this.#defsElement?.insertAdjacentHTML('beforeend', definition)
-        const element = this.#defsElement?.lastChild
+        const element = this.#defsElement?.lastChild as SVGElement
         if (element) {
             element.setAttribute('id', definitionId)
         }
@@ -636,7 +644,7 @@ export class CellDLDiagram {
     #addMoveableObject(object: CellDLObject) {
         this.#objects.set(object.id, object)
         this.#spatialIndex.add(object)
-        if (object.hasEditGuides) {
+        if (object.isMoveable) {
             editGuides.addGuide(<CellDLComponent>object)
         }
         componentLibraryPlugin.addComponent(object)
@@ -661,25 +669,26 @@ export class CellDLDiagram {
         return connection
     }
 
-    makeCompartment(bounds: Bounds): CellDLCompartment {
+    makeCompartmentRegion(bounds: Bounds, isRegion?: boolean): CellDLCompartment|CellDLAnnotation {
         const cornerPoints = bounds.asPoints()
         const svgElement = createCompartmentSvgElement(this.#nextIdentifier(),
-                                                cornerPoints[0], cornerPoints[1])
-        const compartmentObject = this.#addNewObject(
+                                                       cornerPoints[0], cornerPoints[1],
+                                                       isRegion)
+        const object = this.#addNewObject(
             svgElement, {
-                CellDLClass: CellDLCompartment,
+                CellDLClass: isRegion ? CellDLAnnotation : CellDLCompartment,
                 metadataProperties: MetadataPropertiesMap.fromProperties([])
             },
             {
                 atBack: true,
                 hasId: true
             }
-        ) as CellDLCompartment
-        if (compartmentObject) {
-            this.#addMoveableObject(compartmentObject)
+        ) as CellDLCompartment|CellDLAnnotation
+        if (object) {
+            this.#addMoveableObject(object)
         }
         notifyChanges()
-        return compartmentObject
+        return object
     }
 
     groupComponents(bounds: Bounds, objects: CellDLObject[]): CellDLComponent {
@@ -961,6 +970,10 @@ export class CellDLDiagram {
         return false
     }
 
+    setPropertiesPanelObject(celldlObject: CellDLObject|undefined) {
+        this.#celldlEditor.setPropertiesPanelObject(celldlObject)
+    }
+
     #celldlObjectFromRdf<T extends CellDLObject>(CellDLClass: Constructor<T>, subject: $rdf.SubjectType): T {
         const metadata = this.#kb.metadataPropertiesForSubject(subject)
         const objectTemplate = componentLibraryPlugin.getObjectTemplate(subject, metadata, this.#kb)
@@ -1028,7 +1041,7 @@ export class CellDLDiagram {
         for (const storedObject of undoState.storedObjects.values()) {
             storedObject.restoreSvgElement() // adds SVG element to DOM
             const celldlObject = storedObject.celldlObject
-            if (celldlObject.isComponent) {
+            if (celldlObject.isMoveable) {
                 editGuides.addGuide(<CellDLComponent>celldlObject)
             }
             this.#objects.set(celldlObject.id, celldlObject)
@@ -1073,7 +1086,7 @@ export class CellDLDiagram {
         if (undoState) {
             undoState.storeObject(celldlObject)
         }
-        if (celldlObject.isComponent) {
+        if (celldlObject.isMoveable) {
             editGuides.removeGuide(<CellDLComponent>celldlObject)
         }
         celldlObject.celldlSvgElement?.remove() // Will remove SVG element from DOM

@@ -3,7 +3,7 @@
 import type { CellDLObject } from '#editor/celldlObjects'
 import type { CellDLDiagram } from '#editor/diagram'
 
-import type { PointLike } from '#root/utils/points'
+import { Point, type PointLike } from '#root/utils/points'
 import {
     COMPARTMENT_BACKGROUND,
     MEMBRANE_COLOUR,
@@ -11,15 +11,21 @@ import {
     MEMBRANE_DASH,
     MEMBRANE_GAP,
     MEMBRANE_STROKE_WIDTH,
+    REGION_BACKGROUND,
     type Styling,
     STYLE_STRING_FIELD_SEPARATOR
 } from '#root/utils/styling'
 import {
     getFillFromString,
+    getRectDimensions,
     getStrokeString,
+    setRectDimensions,
     setStrokeFromString,
     SVG_URI,
-    svgRect
+    svgRect,
+    updateRectDimensions,
+    type RectDimensions,
+    modifyRectDimensions
 } from '#root/utils/svgUtils'
 
 //==============================================================================
@@ -35,11 +41,20 @@ type CompartmentStyling = {
 
 const DEFAULT_COMPARTMENT_STYLE: CompartmentStyling = {
     cornerRadius: MEMBRANE_CORNER_RADIUS,
-    fill: [COMPARTMENT_BACKGROUND],      // WIP -- gradient fill
+    fill: [COMPARTMENT_BACKGROUND],
     strokeGap: MEMBRANE_GAP,
     strokeColour: MEMBRANE_COLOUR,
     strokeDashed: false,
     strokeWidth: MEMBRANE_STROKE_WIDTH
+}
+
+const DEFAULT_REGION_STYLE: CompartmentStyling = {
+    cornerRadius: 0,
+    fill: [REGION_BACKGROUND],
+    strokeGap: 0,
+    strokeColour: 'none',
+    strokeDashed: false,
+    strokeWidth: 0
 }
 
 //==============================================================================
@@ -54,14 +69,14 @@ const PADDING = 24
 
 //==============================================================================
 
-export function createCompartmentSvgElement(id: string, topLeft: PointLike, bottomRight: PointLike): SVGGElement {
-    const styling = DEFAULT_COMPARTMENT_STYLE
+export function createCompartmentSvgElement(id: string, topLeft: PointLike, bottomRight: PointLike, isRegion?: boolean): SVGGElement {
+    const styling = isRegion ? DEFAULT_REGION_STYLE : DEFAULT_COMPARTMENT_STYLE
     const svgElement = document.createElementNS(SVG_URI, 'g')
     svgElement.id = id
     svgElement.insertAdjacentHTML('beforeend', createRectAsString(topLeft, bottomRight, styling, styling.strokeGap/2))
     if (styling.strokeGap > 0) {
         svgElement.insertAdjacentHTML('beforeend', createRectAsString(topLeft, bottomRight, styling, -styling.strokeGap/2))
-        svgElement.setAttribute('data-stroke-gap', String(styling.strokeGap))
+        svgElement.dataset.strokeGap = String(styling.strokeGap)
     }
     return svgElement
 }
@@ -71,8 +86,11 @@ export function createCompartmentSvgElement(id: string, topLeft: PointLike, bott
 function createRectAsString(topLeft: PointLike, bottomRight: PointLike,
                             styling: CompartmentStyling, offset: number=0): string {
     const attributes: Record<string, string> = {
-        stroke: styling.strokeColour,
-        'stroke-width': String(styling.strokeWidth)
+        stroke: styling.strokeColour
+    }
+    if (styling.strokeWidth > 0 && styling.strokeColour !== 'none') {
+        attributes.stroke = styling.strokeColour
+        attributes['stroke-width'] = String(styling.strokeWidth)
     }
     const radius = styling.cornerRadius + offset
     if (radius > 0) {
@@ -83,7 +101,7 @@ function createRectAsString(topLeft: PointLike, bottomRight: PointLike,
     }
     // Background only when a single compartment boundary or this is the innermost boundary
     if (offset <= 0) {
-        attributes.fill = COMPARTMENT_BACKGROUND
+        attributes.fill = styling.fill[0] as string
         attributes['fill-opacity'] = '0.8'
     } else {
         attributes.fill = 'none'
@@ -93,32 +111,6 @@ function createRectAsString(topLeft: PointLike, bottomRight: PointLike,
         { x: bottomRight.x + offset, y: bottomRight.y + offset },
         attributes
     )
-}
-
-//==============================================================================
-
-type RectDimensions = {
-    x: number
-    y: number
-    width: number
-    height: number
-}
-
-function getRectDimensions(rect: SVGRectElement): RectDimensions {
-    return {
-        x: Number(rect.getAttribute('x')),
-        y: Number(rect.getAttribute('y')),
-        width: Number(rect.getAttribute('width')),
-        height: Number(rect.getAttribute('height'))
-    }
-}
-
-function updateRectDimensions(rect: SVGRectElement, delta: number) {  // -ve `delta` will shrink
-    const dims = getRectDimensions(rect)
-    rect.setAttribute('x', `${dims.x - delta}`)
-    rect.setAttribute('y', `${dims.y - delta}`)
-    rect.setAttribute('width', `${Math.max(0, dims.width + 2*delta)}`)
-    rect.setAttribute('height', `${Math.max(0, dims.height + 2*delta)}`)
 }
 
 //==============================================================================
@@ -151,7 +143,7 @@ class TextElement {
     constructor(parent: SVGGElement, containerSize: RectDimensions) {
         this.#containerSize = containerSize
         this.#canvas = document.createElement('canvas')
-        this.#setStyle(parent.getAttribute('data-text-style') || DEFAULT_TEXT_STYLE)
+        this.#setStyle(parent.dataset.textStyle || DEFAULT_TEXT_STYLE)
         const xMetrics = this.#getTextSize('x', FONT)
         this.#xHeight = xMetrics?.actualBoundingBoxAscent || FONT_PIXEL_SIZE/2
         this.#setPosition()
@@ -211,7 +203,10 @@ class TextElement {
         this.#vAlign = fields.at(1) || '0'
     }
 
-    resize(_size: PointLike) {
+    updateDimensions(containerSize: RectDimensions) {
+        this.#containerSize = containerSize
+        this.#setPosition()
+        this.#updateText()
     }
 
     updateText(text: string|undefined) {
@@ -263,21 +258,24 @@ export class Compartment {
     #celldlDiagram: CellDLDiagram
     #celldlObject: CellDLObject
     #objectId: string
+    #startResizeDims: RectDimensions|undefined
     #styling: Styling = {}
     #svgElement: SVGGElement
     #textElement: TextElement
 
-    constructor(celldlObject: CellDLObject) {
+    constructor(celldlObject: CellDLObject, isRegion?: boolean) {
         this.#celldlObject = celldlObject
         this.#celldlDiagram = celldlObject.celldlDiagram
         this.#objectId = celldlObject.id
         this.#svgElement = celldlObject.svgElement as SVGGElement
         const innerRects = [...this.#svgElement.querySelectorAll('rect').values()]
         this.#boundary0 = innerRects[0] as SVGRectElement
-        this.#boundary1 = innerRects[1]
-        const strokeGap = Number(this.#svgElement.getAttribute('data-stroke-gap')) || 0
-        this.#styling.gapStyle = String(strokeGap)
-        let fillString = this.#svgElement.getAttribute('data-fill-style')
+        const strokeGap = isRegion ? 0 : Number(this.#svgElement.dataset.strokeGap) || 0
+        if (!isRegion) {
+            this.#boundary1 = innerRects[1]
+            this.#styling.gapStyle = String(strokeGap)
+        }
+        let fillString = this.#svgElement.dataset.fillStyle
         if (!fillString) {
             if (innerRects.length) {
                 if (strokeGap === 0) {
@@ -291,21 +289,22 @@ export class Compartment {
             } else if (fillString.startsWith('url(') && fillString.endsWith(')')) {
                 fillString = 'yellow'
             }
-            this.#styling.fillStyle = fillString
         }
-        let cornerRadius = 0
-        if (innerRects.length) {
-            this.#styling.pathStyle = getStrokeString(this.#boundary0 as SVGRectElement, {
-                colour: MEMBRANE_COLOUR,
-                width: MEMBRANE_STROKE_WIDTH,
+        this.#styling.fillStyle = fillString
+        if (!isRegion && innerRects.length) {
+            let cornerRadius = 0
+            this.#styling.strokeStyle = getStrokeString(this.#boundary0 as SVGRectElement,
+            {
+                colour: DEFAULT_COMPARTMENT_STYLE.strokeColour,  //
+                width: DEFAULT_COMPARTMENT_STYLE.strokeWidth,
                 dashScale: MEMBRANE_DASH
             })
             cornerRadius = Number(this.#boundary0.getAttribute('rx') as string)
             if (this.#boundary1) {
                 cornerRadius = (cornerRadius + Number(this.#boundary1.getAttribute('rx') as string))/2
             }
+            this.#styling.cornerStyle = String(cornerRadius)
         }
-        this.#styling.cornerStyle = String(cornerRadius)
         this.#textElement = new TextElement(this.#svgElement, getRectDimensions(this.#boundary0))
     }
 
@@ -317,7 +316,7 @@ export class Compartment {
     }
 
     setStyling(styling: Styling) {
-        let strokeGap = Number(this.#svgElement.getAttribute('data-stroke-gap')) || 0
+        let strokeGap = Number(this.#svgElement.dataset.strokeGap) || 0
         if (styling.gapStyle && strokeGap !== Number(styling.gapStyle)) {
             this.#styling.gapStyle = styling.gapStyle
             const newGap = Number(styling.gapStyle)
@@ -325,19 +324,28 @@ export class Compartment {
                 // Double to single boundary
                 updateRectDimensions(this.#boundary0, 0)
                 if (this.#boundary1) {
+                    const fill = this.#boundary1.getAttribute('fill')
+                    if (fill) {
+                        this.#boundary0.setAttribute('fill', fill)
+                    }
                     this.#svgElement.removeChild(this.#boundary1)
                     this.#boundary1 = undefined
                 }
-                this.#svgElement.removeAttribute('data-stroke-gap')
+                delete this.#svgElement.dataset.strokeGap
             } else if (strokeGap === 0) {
                 // Single to double boundary
                 if (!this.#boundary1) {
                     this.#boundary1 = this.#boundary0.cloneNode() as SVGRectElement
                     this.#svgElement.appendChild(this.#boundary1)
-                    updateRectDimensions(this.#boundary1, -newGap/2)
                 }
-                updateRectDimensions(this.#boundary0, newGap/2)
-                this.#svgElement.setAttribute('data-stroke-gap', String(newGap))
+                updateRectDimensions(this.#boundary1, -newGap/2)
+                updateRectDimensions(this.#boundary0,  newGap/2)
+                const fill = this.#boundary0.getAttribute('fill')
+                    if (fill) {
+                        this.#boundary0.setAttribute('fill', 'none')
+                        this.#boundary1.setAttribute('fill', fill)
+                    }
+                this.#svgElement.dataset.strokeGap = String(newGap)
             } else {
                 // adjust
                 const delta = (newGap - strokeGap)/2
@@ -345,7 +353,7 @@ export class Compartment {
                 if (this.#boundary1) {
                     updateRectDimensions(this.#boundary1, -delta)
                 }
-                this.#svgElement.setAttribute('data-stroke-gap', String(newGap))
+                this.#svgElement.dataset.strokeGap = String(newGap)
             }
             strokeGap = newGap
         }
@@ -354,7 +362,7 @@ export class Compartment {
             this.#styling.fillStyle = styling.fillStyle
             const gradientId = `fill-${this.#objectId}`
             const fill = getFillFromString(styling.fillStyle, gradientId)
-            this.#svgElement.setAttribute('data-fill-style', fill.dataFillStyle)
+            this.#svgElement.dataset.fillStyle = fill.dataFillStyle
             if (strokeGap === 0) {
                 this.#boundary0.setAttribute('fill', fill.fillAttribute)
             } else if (this.#boundary1) {
@@ -367,11 +375,11 @@ export class Compartment {
             }
         }
 
-        if (styling.pathStyle) {
-            this.#styling.pathStyle = styling.pathStyle
-            setStrokeFromString(this.#boundary0, styling.pathStyle)
+        if (styling.strokeStyle) {
+            this.#styling.strokeStyle = styling.strokeStyle
+            setStrokeFromString(this.#boundary0, styling.strokeStyle)
             if (this.#boundary1) {
-                setStrokeFromString(this.#boundary1, styling.pathStyle)
+                setStrokeFromString(this.#boundary1, styling.strokeStyle)
             }
         }
 
@@ -390,8 +398,29 @@ export class Compartment {
 
         if (styling.textStyle) {
             this.#textElement.setStyle(styling.textStyle)
-            this.#svgElement.setAttribute('data-text-style', styling.textStyle)
+            this.#svgElement.dataset.textStyle = styling.textStyle
         }
+    }
+
+    startResize() {
+        this.#startResizeDims = getRectDimensions(this.#boundary0)
+    }
+
+    resize(topLeftDelta: PointLike, bottomRightDelta: PointLike) {
+        if (this.#startResizeDims) {
+            modifyRectDimensions(this.#boundary0, this.#startResizeDims, topLeftDelta, bottomRightDelta)
+            if (this.#boundary1) {
+                const strokeGap = Number(this.#svgElement.dataset.strokeGap) || 0
+                const dims = getRectDimensions(this.#boundary0)
+                setRectDimensions(this.#boundary1, {x: dims.x + strokeGap, y: dims.y + strokeGap},
+                                                   {x: dims.width - 2*strokeGap, y: dims.height - 2*strokeGap})
+            }
+        this.#textElement.updateDimensions(getRectDimensions(this.#boundary0))
+        }
+    }
+
+    endResize() {
+         this.#startResizeDims = undefined
     }
 
     update() {

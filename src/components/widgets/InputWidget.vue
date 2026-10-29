@@ -24,17 +24,24 @@
         FloatLabel(variant="on")
             InputText(
                 :modelValue="scalarValue"
-                v-keyfilter.num
+                :invalid="isInvalid"
+                @value-change="validateInput"
                 v-on:focusout="inputTextFocusOut"
                 v-on:keypress="inputTextKeyPress"
                 class="w-full"
                 size="small"
             )
             label {{ nameUnits }}
+            Message(
+                v-if="isInvalid"
+                severity="error"
+                size="small"
+                variant="simple") {{ errorMessage }}
+
     .bottom-margin(v-else)
         FloatLabel(variant="on")
             InputText(
-                :modelValue="value"
+                :modelValue="textValue"
                 @value-change="inputTextChange"
                 class="w-full"
                 size="small"
@@ -44,14 +51,14 @@
 
 <script setup lang="ts">
 import * as vue from 'vue'
+import { logging } from '#root/utils/logging'
 import { useThemeCssVariables } from '#root/utils/themeCssVariables'
 
 useThemeCssVariables('floatlabel')
 useThemeCssVariables('inputtext')
 useThemeCssVariables('select')
 
-import KeyFilter from 'primevue/keyfilter';
-//  v-keyfilter="{ pattern: /^[+-]?((\d+(\.\d*)?)|(\.\d+))([eE][+-]?\d+)?$/, validateOnly: true }"
+import { ucum } from '@atomic-ehr/ucum'
 
 import type * as locApi from '../../libopencor/locUIJsonApi'
 
@@ -75,6 +82,9 @@ const props = defineProps<{
 
 const nameUnits = vue.computed(() => props.units ? `${props.name} (${props.units})` : props.name)
 
+const errorMessage = vue.ref('')
+const isInvalid = vue.computed(() => errorMessage.value.trim() !== '')
+
 const scalarType = !!props.numeric
 
 let oldValue = (props.possibleValues === undefined)
@@ -83,35 +93,43 @@ let oldValue = (props.possibleValues === undefined)
 
 const discreteValue = vue.computed<locApi.IUiJsonDiscreteInputPossibleValue>({
     get() {
-        return (inputValue.value as locApi.IUiJsonDiscreteInputPossibleValue)
+        const value = (inputValue.value as locApi.IUiJsonDiscreteInputPossibleValue)
+        oldValue = value.value
+        logging.trace('discreteValue', { itemId: props.itemId, oldValue })
+        return value
     },
     set(_: ValueType) {
     }
 })
 
-const scalarValue = vue.ref<number>(Number(inputValue.value))
-const stringValue = vue.ref<string>(String(inputValue.value))
-
-vue.watch(
-    () => props.value,
-    () => {
-        if (scalarType) {
-            scalarValue.value = Number(props.value)
-            stringValue.value = String(inputValue.value)
+const scalarValue = vue.computed<string>(() => {
+    oldValue = String(inputValue.value).trim()
+    if (scalarType) {
+        const valueFields = oldValue.split(/\s+/)
+        const valueString = valueFields[0] as string
+        let valueUnits = valueFields[1]
+        if (valueUnits && props.units && ucum.convert(1, valueUnits, props.units) === 1) {
+            valueUnits = undefined
         }
+        oldValue = valueUnits ? `${valueString} ${valueUnits}` : valueString
     }
-)
+    logging.trace('scalarValue', { itemId: props.itemId, oldValue })
+    return oldValue
+})
+
+const textValue = vue.computed<string>(() => {
+    oldValue = String(inputValue.value).trim()
+    logging.trace('textValue', { itemId: props.itemId, oldValue })
+    return oldValue
+})
 
 // Some methods to handle a scalar value using an input text and a slider.
 
-function emitChange(newValue: number | string) {
+function emitChange(newValue: string) {
     void vue.nextTick().then(() => {
         if (scalarType && props.possibleValues === undefined) {
             inputValue.value = newValue
-            scalarValue.value = <number>newValue
-            stringValue.value = String(newValue) // This will properly format the input text.
         }
-
         emits('change', props.itemId, oldValue, newValue)
         oldValue = newValue
     })
@@ -126,36 +144,77 @@ interface ISelectChangeEvent {
 
 function selectChange(event: ISelectChangeEvent) {
     if (event.value.value !== oldValue) {
-        emitChange(event.value.value)
+        emitChange(String(event.value.value))
     }
 }
 
-function inputTextChange(newValueString: string) {
-    if (scalarType && newValueString === '') {
-        newValueString = String(props.minimumValue)
+function inputTextChange(newValue: string) {
+    errorMessage.value = ''
+    if (scalarType) {
+        // Input has already been validated
+        const valueFields = newValue.trim().split(/\s+/)
+        let valueString = valueFields[0] as string
+        if (valueString === '') {
+            valueString = String(props.minimumValue)
+        }
+        const valueNumber = Number(valueString)
+        if (props.minimumValue !== undefined && valueNumber < props.minimumValue) {
+            valueString = String(props.minimumValue)
+        }
+        if (props.maximumValue !== undefined && valueNumber > props.maximumValue) {
+            valueString = String(props.maximumValue)
+        }
+        // want
+        let valueUnits = valueFields[1]
+        if (valueUnits && props.units && ucum.convert(1, valueUnits, props.units) === 1) {
+            valueUnits = undefined
+        }
+        newValue = valueUnits ? `${valueString} ${valueUnits}` : valueString
     }
-
-    if (props.minimumValue !== undefined && Number(newValueString) < props.minimumValue) {
-        newValueString = String(props.minimumValue)
-    }
-
-    if (props.maximumValue !== undefined && Number(newValueString) > props.maximumValue) {
-        newValueString = String(props.maximumValue)
-    }
-
-    const newValue = scalarType ? Number(newValueString) : newValueString
-
+    logging.trace('inputTextChange', { itemId: props.itemId, oldValue, newValue })
     if (newValue !== oldValue) {
         emitChange(newValue)
     }
 }
 
+function validateInput(newValue: string) {
+    errorMessage.value = ''
+    if (scalarType) {
+        const valueFields = newValue.trim().split(/\s+/)
+        let valueString = valueFields[0] as string
+        if (valueString === '') {
+            valueString = String(props.minimumValue)
+        }
+        if (isNaN(Number(valueString))) {
+            errorMessage.value = 'Invalid number'
+        } else if (valueFields.length > 1) {
+            if (!props.units || valueFields.length > 2) {
+                errorMessage.value = 'Invalid units specification'
+            } else {
+                const valueUnits = valueFields[1] as string
+                if (!ucum.validate(valueUnits).valid) {
+                    errorMessage.value = 'Unknown units'
+                } else if (!ucum.isConvertible(valueUnits, props.units)) {
+                    errorMessage.value = 'Incompatible units'
+                }
+            }
+        }
+    }
+    if (errorMessage.value === '') {
+        inputTextChange(newValue)
+    }
+}
+
 function inputTextFocusOut(event: Event) {
-    inputTextChange((event.target as HTMLInputElement).value)
+    // Input has already been validated
+    if (errorMessage.value === '') {
+        inputTextChange((event.target as HTMLInputElement).value)
+    }
 }
 
 function inputTextKeyPress(event: KeyboardEvent) {
-    if (event.key === 'Enter') {
+    // Input has already been validated
+    if (errorMessage.value === '' && event.key === 'Enter') {
         inputTextChange((event.target as HTMLInputElement).value)
     }
 }
@@ -163,7 +222,7 @@ function inputTextKeyPress(event: KeyboardEvent) {
 
 <style scoped>
     .bottom-margin {
-        margin-bottom: 30px;
+        margin-bottom: 20px;
     }
     .emphasise {
         font-style: italic;

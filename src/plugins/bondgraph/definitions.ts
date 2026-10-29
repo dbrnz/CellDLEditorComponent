@@ -36,7 +36,7 @@ const ICON_MIN_HEIGHT = '4ex'
 const ICON_VERTICAL_ALIGN = '-1.5ex'
 const ICON_RADIUS = '6px'
 
-const MIN_BORDER = '0.2px'
+const MIN_BORDER = '0'
 const MIN_BORDER_COLOUR = 'grey'
 
 //==============================================================================
@@ -83,9 +83,10 @@ const ONE_RESISTANCE_STYLE: BGElementStyle = {
     border: 'green'
 }
 
-const SCALE_STYLE: BGElementStyle = {
+const TRANSFORM_STYLE: BGElementStyle = {
     text: '#7030A0',
-    background: '#C1C1FA'
+    background: '#C1C1FA',
+    shape: 'circle'
 }
 
 const _UNITS_STYLE: BGElementStyle = {
@@ -172,7 +173,7 @@ export const BONDGRAPH_COMPONENT_DEFINITIONS: BGComponentDefinition[] = [
         name: 'Transform node',
         numPorts: 2,
         symbol: 'k',
-        style: SCALE_STYLE,
+        style: TRANSFORM_STYLE,
         noSpeciesLocation: true
     },
     {
@@ -213,7 +214,8 @@ function typeset(latex: string, style: BGElementStyle, base64: boolean=false): s
             padding: ICON_PADDING,
             'corner-radius': ICON_RADIUS,
             background: style.background,
-            border: style.border || MIN_BORDER_COLOUR
+            border: style.border || MIN_BORDER_COLOUR,
+            shape: style.shape
         }
     )
     return svgToDataUrl(svg, base64)

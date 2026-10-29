@@ -64,6 +64,16 @@
     stroke-width: 1;
     stroke-opacity: 0.8;
 }
+#svg-container .axis-guide {
+    stroke: #080;
+    stroke-width: 0.7;
+    stroke-opacity: 0.8;
+}
+#svg-container .axis-guide.visible {
+    stroke: #08f;
+    stroke-width: 1;
+    stroke-opacity: 0.8;
+}
 
 /* Control points */
 #svg-container .control-point {
@@ -87,6 +97,9 @@
 #svg-container .active:not(.celldl-Connection) {
     stroke: var(--active) !important;
 }
+#svg-container .active.gripper {
+    stroke: none !important;
+}
 #svg-container .selected:not(.celldl-Connection) {
     stroke: var(--selected) !important;
 }
@@ -96,28 +109,27 @@
 #svg-container .active.selected:not(.celldl-Connection) {
     stroke: var(--active-selected) !important;
 }
-#svg-container .selection-rect {
+#svg-container .draw-box-rect {
     fill: #ccc;
-    fill-opacity: 0.2;
+    fill-opacity: 0.4;
     stroke: var(--p-surface-0);
     stroke-width: 0.3;
 }
-#svg-container .selection-rect-outer {
+#svg-container .draw-compartment-outer {
     fill: none;
     stroke: var(--editor-membrane-colour);
     stroke-width: var(--editor-membrane-width);
     rx: calc(var(--editor-membrane-radius) + var(--editor-membrane-gap)/2)
 }
-#svg-container .selection-rect-inner {
+#svg-container .draw-compartment-inner {
     fill: var(--editor-compartment-fill);
+    opacity: 0.2;
     stroke: var(--editor-membrane-colour);
     stroke-width: var(--editor-membrane-width);
     rx: calc(var(--editor-membrane-radius) - var(--editor-membrane-gap)/2) /* See DOUBLE_BOUNDARY_OFFSET */
 }
 
-/* Compartments */
-
-#svg-container #compartment-select-rect {
+#svg-container .editor-resizer-box {
     fill: none;
 }
 

@@ -73,7 +73,7 @@ class BranchPoint implements PointLike {
 
 //==============================================================================
 
-export class CellDLObject {
+export abstract class CellDLObject {
     static celldlStyleClass: CELLDL_STYLE_CLASS = CELLDL_STYLE_CLASS.Unknown
     static celldlTypeName: string = 'Object'
 
@@ -144,10 +144,6 @@ export class CellDLObject {
 
     get description() {
         return this.#description
-    }
-
-    get hasEditGuides() {
-        return false
     }
 
     get id(): string {
@@ -307,6 +303,9 @@ export class CellDLObject {
         this.#celldlSvgElement?.drawControlHandles()
     }
 
+    setSelectedHandles(_enable: boolean) {
+    }
+
     highlight(highlight: boolean=true) {
         this.#celldlSvgElement?.highlight(highlight)
     }
@@ -318,6 +317,7 @@ export class CellDLObject {
     }
 
     select(selected: boolean=true) {
+        this.setSelectedHandles(selected)
         this.#celldlSvgElement?.select(selected)
     }
 
@@ -358,14 +358,14 @@ export class CellDLMoveableObject extends CellDLObject {
 
     #boundedElement: BoundedElement|undefined
 
-    startMove(svgPoint: PointLike, options: ElementMoveOptions={}) {
-        // Finding alignment guides as we move
-        editGuides.aligning(this, true)
-        super.startMove(svgPoint, options)
-    }
-
     get isMoveable() {
         return true
+    }
+
+    startMove(svgPoint: PointLike, options: ElementMoveOptions={}) {
+        // We are finding alignment guides as we move and don't want to find ours
+        editGuides.aligning(this, true)
+        super.startMove(svgPoint, options)
     }
 
     move(svgPoint: PointLike, options: ElementMoveOptions={}) {
@@ -376,7 +376,7 @@ export class CellDLMoveableObject extends CellDLObject {
 
     endMove() {
         super.endMove()
-        // We've stopped finding our alignment guides
+        // We've stopped moving and want our alignment guides available
         editGuides.aligning(this, false)
     }
 
@@ -385,7 +385,10 @@ export class CellDLMoveableObject extends CellDLObject {
     }
 
     assignSvgElement(svgElement: SVGGraphicsElement, align: boolean) {
-        this.#boundedElement = new BoundedElement(this, svgElement, this.isAlignable, align)
+        this.#boundedElement = new BoundedElement(this, svgElement, {
+            align,
+            gridAligned: this.isAlignable
+        })
     }
 }
 
@@ -395,8 +398,20 @@ export class CellDLAnnotation extends CellDLMoveableObject {
     static celldlStyleClass = CELLDL_STYLE_CLASS.Annotation
     static celldlTypeName = 'Annotation'
 
-    get hasEditGuides() {
-        return true
+    #annotationElement: CompartmentElement|undefined
+
+    assignSvgElement(svgElement: SVGGraphicsElement, align: boolean) {
+        this.#annotationElement = new CompartmentElement(this, svgElement, {
+            align: align,
+            gridAligned: this.isAlignable,
+            isRegion: true
+        })
+    }
+
+    setSelectedHandles(enable: boolean) {
+        if (this.#annotationElement) {
+            this.#annotationElement.setSelectedHandles(enable)
+        }
     }
 }
 
@@ -411,9 +426,10 @@ export class CellDLConnectedObject extends CellDLMoveableObject {
     constructor(
         uri: NamedNode,
         objectTemplate: ObjectTemplate,
-        celldlDiagram: CellDLDiagram
+        celldlDiagram: CellDLDiagram,
+        updateStore: boolean=true
     ) {
-        super(uri, objectTemplate, celldlDiagram)
+        super(uri, objectTemplate, celldlDiagram, updateStore)
         this.#maxConnections = componentLibraryPlugin.getMaxConnections(this)
     }
 
@@ -460,7 +476,15 @@ export class CellDLConnectedObject extends CellDLMoveableObject {
         super.startMove(svgPoint, options)
         // Remove control handles from selected connections
         this.#connections.forEach(connection => {
-            connection.clearSelectedHandles()
+            connection.setSelectedHandles(false)
+        })
+    }
+
+    endMove() {
+        super.endMove()
+        // Restore control handles on selected connections
+        this.#connections.forEach(connection => {
+            connection.setSelectedHandles(true)
         })
     }
 
@@ -484,9 +508,10 @@ export class CellDLComponent extends CellDLConnectedObject {
     constructor(
         uri: NamedNode,
         objectTemplate: ObjectTemplate,
-        celldlDiagram: CellDLDiagram
+        celldlDiagram: CellDLDiagram,
+        updateStore: boolean=true
     ) {
-        super(uri, objectTemplate, celldlDiagram)
+        super(uri, objectTemplate, celldlDiagram, updateStore)
         this.#interfacePorts = objectTemplate.metadataProperties
             .getPropertyAsArray(CELLDL.uri('hasInterface'))
             .map((node) => <CellDLInterface>celldlDiagram.getConnector(node))
@@ -503,10 +528,6 @@ export class CellDLComponent extends CellDLConnectedObject {
 
     get interfacePorts() {
         return this.#interfacePorts
-    }
-
-    get hasEditGuides() {
-        return true
     }
 
     move(svgPoint: PointLike, options: ElementMoveOptions={}) {
@@ -539,23 +560,15 @@ export class CellDLCompartment extends CellDLConnectedObject {
     static readonly celldlStyleClass = CELLDL_STYLE_CLASS.Compartment
     static celldlTypeName = 'Compartment'
 
-
-    constructor(
-        uri: NamedNode,
-        objectTemplate: ObjectTemplate,
-        celldlDiagram: CellDLDiagram
-    ) {
-        super(uri, objectTemplate, celldlDiagram)
-    }
     #associatedComponents: CellDLMoveableObject[] = []
     #compartmentElement: CompartmentElement|undefined
 
-    get isAlignable() {
-        return false
-    }
-
     assignSvgElement(svgElement: SVGGraphicsElement, align: boolean) {
-        this.#compartmentElement = new CompartmentElement(this, svgElement, this.isAlignable, align)
+        this.#compartmentElement = new CompartmentElement(this, svgElement, {
+            align: align,
+            gridAligned: this.isAlignable,
+            isRegion: false
+        })
         if (this.celldlSvgElement) {
             for (const object of this.celldlDiagram.objectsContainedIn(this.celldlSvgElement.bounds)) {
                 const celldlObject = object.object
@@ -566,10 +579,13 @@ export class CellDLCompartment extends CellDLConnectedObject {
         }
     }
 
+// after a resize need to update associatedComponents
+
     startMove(svgPoint: PointLike, options: ElementMoveOptions={}) {
         super.startMove(svgPoint, options)
+        // this needs to be like a selection-set start move....
         for (const component of this.#associatedComponents) {
-            component.startMove(svgPoint, { noAlign: true, snapGrid: false })
+            component.startMove(svgPoint, options)
         }
     }
 
@@ -577,7 +593,7 @@ export class CellDLCompartment extends CellDLConnectedObject {
         super.move(svgPoint, options)
         // A move of the compartment moves associated components.
         for (const component of this.#associatedComponents) {
-            component.move(svgPoint, { noAlign: true, snapGrid: false })
+            component.move(svgPoint, options)
         }
     }
 
@@ -585,6 +601,12 @@ export class CellDLCompartment extends CellDLConnectedObject {
         super.endMove()
         for (const component of this.#associatedComponents) {
             component.endMove()
+        }
+    }
+
+    setSelectedHandles(enable: boolean) {
+        if (this.#compartmentElement) {
+            this.#compartmentElement.setSelectedHandles(enable)
         }
     }
 }
@@ -601,9 +623,10 @@ export class CellDLConnection extends CellDLObject {
     constructor(
         uri: NamedNode,
         objectTemplate: ObjectTemplate,
-        celldlDiagram: CellDLDiagram
+        celldlDiagram: CellDLDiagram,
+        updateStore: boolean=true
     ) {
-        super(uri, objectTemplate, celldlDiagram)
+        super(uri, objectTemplate, celldlDiagram, updateStore)
         const metadata = objectTemplate.metadataProperties
         const source = celldlDiagram.getConnector(metadata.getProperty(CELLDL.uri('hasSource')))
         const target = celldlDiagram.getConnector(metadata.getProperty(CELLDL.uri('hasTarget')))
@@ -652,9 +675,9 @@ export class CellDLConnection extends CellDLObject {
         this.#svgConnection = new SvgConnection(this, svgElement)
     }
 
-    clearSelectedHandles() {
+    setSelectedHandles(enable: boolean) {
         if (this.#svgConnection) {
-            this.#svgConnection.clearSelectedHandles()
+            this.#svgConnection.setSelectedHandles(enable)
         }
     }
 }

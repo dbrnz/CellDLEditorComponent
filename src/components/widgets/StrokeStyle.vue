@@ -18,15 +18,14 @@
                 @change="emitChange"
             )
             label Width (px)
-        .spacer
-        .flexPrompt
+        .spacer(v-if="stroke.dashScale > 0")
+        .flexPrompt(v-if="stroke.dashScale > 0")
             label Dashed:
             Checkbox#gradientCheckbox(
                 v-model="stroke.dashed"
                 binary
                 @change="emitChange"
             )
-        Divider
 </template>
 
 <script setup lang="ts">
@@ -36,7 +35,7 @@ import * as vue from 'vue'
 import Slider from 'primevue/slider'
 import { TinyColor } from '@ctrl/tinycolor'
 
-import { STYLE_STRING_FIELD_SEPARATOR } from '#root/utils/styling'
+import { STYLE_STRING_FIELD_SEPARATOR, type StrokeAttributes } from '#root/utils/styling'
 import { useThemeCssVariables } from '#root/utils/themeCssVariables'
 
 useThemeCssVariables('checkbox')
@@ -46,39 +45,25 @@ useThemeCssVariables('slider')
 
 //==============================================================================
 
-const { pathStyle } = defineProps<{ pathStyle: string }>()
+const props = defineProps<{ strokeStyle: string }>()
 
 const emit = defineEmits(['change'])
 
 //==============================================================================
 
-type StrokeFields = {
-    colour?: string
-    dashed?: boolean
-    width?: number
-    dashScale?: number
-}
-
-const stroke = vue.ref<StrokeFields>({})
-
-function  makeColour(colour: string): string {
+function makeColour(colour: string): string {
     return new TinyColor(colour).toHexString()
 }
 
-function setStroke(strokeStyle: string) {
-    const strokeArray: string[] = strokeStyle.split(STYLE_STRING_FIELD_SEPARATOR)
-    stroke.value.colour = makeColour((strokeArray.at(0)) as string)
-    stroke.value.width = Number((strokeArray.at(1)) as string)
-    stroke.value.dashed = strokeArray.at(2) === '1'
-    stroke.value.dashScale = Number(strokeArray.at(3) as string)
-}
-
-setStroke(pathStyle)
-
-vue.watch(
-    () => pathStyle,
-    () => setStroke(pathStyle)
-)
+const stroke = vue.computed<StrokeAttributes>(() => {
+    const strokeArray: string[] = props.strokeStyle.split(STYLE_STRING_FIELD_SEPARATOR)
+    return {
+        colour: makeColour((strokeArray.at(0)) as string),
+        width: Number((strokeArray.at(1)) as string),
+        dashed: strokeArray.at(2) === '1',
+        dashScale: Number(strokeArray.at(3) as string)
+    }
+})
 
 const minWidth = vue.ref<number>(0.5)
 const maxWidth = vue.ref<number>(10)
@@ -100,6 +85,7 @@ function emitChange() {
         String(stroke.value.dashScale)
     ].join(STYLE_STRING_FIELD_SEPARATOR))
 }
+
 //==============================================================================
 </script>
 

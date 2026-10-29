@@ -21,6 +21,7 @@ limitations under the License.
 import type { ObjectTemplate } from '#editor/components'
 import type { CellDLDiagram } from '#editor/diagram'
 import { type PointLike, PointMath } from '#root/utils/points'
+import { SVG_ICON_HEIGHT } from '#root/utils/styling'
 import { SVG_URI } from '#root/utils/svgUtils'
 
 //==============================================================================
@@ -39,7 +40,7 @@ function addSvgElementFromTemplate(svgGroup: SVGGElement, template: ObjectTempla
     const svgElement: SVGGElement = document.createElementNS(SVG_URI, 'g')
     svgElement.setAttribute('style', 'visibility: hidden')
     if (template.imageData) {
-        svgElement.insertAdjacentHTML('beforeend', `<image href="${template.imageData}">`)
+        svgElement.insertAdjacentHTML('beforeend', `<image href="${template.imageData}" height="${SVG_ICON_HEIGHT}">`)
     }
     svgGroup.append(svgElement)
     const bbox = svgElement.getBBox()

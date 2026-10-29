@@ -1,14 +1,6 @@
 <template lang="pug">
     .card
         InputWidget(
-            v-model="vAlignValue"
-            itemId="vAlign"
-            name="Text vertical alignment"
-            :value="vAlignValue"
-            :possibleValues="vAlignmentItems"
-            @change="emitChange"
-        )
-        InputWidget(
             v-model="hAlignValue"
             itemId="hAlign"
             name="Text horizontal alignment"
@@ -16,7 +8,14 @@
             :possibleValues="hAlignmentItems"
             @change="emitChange"
         )
-        Divider
+        InputWidget(
+            v-model="vAlignValue"
+            itemId="vAlign"
+            name="Text vertical alignment"
+            :value="vAlignValue"
+            :possibleValues="vAlignmentItems"
+            @change="emitChange"
+        )
 </template>
 
 <script setup lang="ts">

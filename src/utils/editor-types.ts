@@ -138,6 +138,7 @@ export type FileStatus = {
 //==============================================================================
 
 export type ViewState = {
+    showAxes?: boolean
     showGrid?: boolean
     gridSpacing?: number
     snapToGrid?: number

@@ -27,7 +27,6 @@ useThemeCssVariables('scrollpanel')
 .panel-title {
     font-size: var(--p-card-title-font-size);
     font-weight: var(--p-card-title-font-weight);
-    margin-bottom: 20px;
 }
 
 .panel-content {

@@ -28,7 +28,7 @@ import { Point, type PointLike } from '#root/utils/points'
 import type { Styling } from '#root/utils/styling'
 import { getFillString } from '#root/utils/svgUtils'
 
-import { CellDLSVGElement, type ElementMoveOptions } from '.'
+import { CellDLSVGElement, type ElementMoveOptions, type SvgElementOptions } from '.'
 import type { PathElement } from './utils/pathelement'
 
 //==============================================================================
@@ -48,31 +48,31 @@ export class BoundedElement extends CellDLSVGElement {
     #localTransform: Transform
     #topLeftCorner: Point
 
-    constructor(object: CellDLObject, svgElement: SVGGraphicsElement, gridAligned: boolean=false, align: boolean=false) {
-        super(object, svgElement)
+    constructor(object: CellDLObject, svgElement: SVGGraphicsElement, options: SvgElementOptions) {
+        super(object, svgElement, options)
         // local transform on the element
         this.#localTransform = Transform.fromString(getComputedStyle(svgElement).transform)
         this.#controlRect = new ControlRect(
             RestrictedPoint.fromPoint(this.topLeft),
             RestrictedPoint.fromPoint(this.topLeft.add(this.size)),
-            this.normalisedCentre
+            this.normalisedCentre,
+            options.edgeAligned
         )
         this.setCentroid(this.#controlRect.centroid.point)
         this.#topLeftCorner = this.#controlRect.topLeftPoint
-        this.#controlRect.gridAligned = gridAligned
-        if (gridAligned && align) {
+        this.#controlRect.gridAligned = !!options.gridAligned
+        if (options.align && !options.edgeAligned && options.gridAligned) {
             const gridAlignedCentroid = editGuides.gridAlign(this.centroid, { fullSnap: true })
-            this.#reposition(gridAlignedCentroid)
+            this.setCentroid(gridAlignedCentroid)
+            this.#controlRect.reposition(gridAlignedCentroid)
+            if (this.#controlRect.dirty) {
+                this.redraw()
+            }
         }
     }
 
     isMoveable(_svgElement: SVGGraphicsElement): boolean {
         return !this.svgElement.classList.contains(CELLDL_STYLE_CLASS.Interface)
-    }
-
-    startMove(svgPoint: PointLike, options: ElementMoveOptions={}) {
-        this.#controlRect.startMove(svgPoint)
-        this.#excludeConnectionIds = options?.excludeConnectionIds || new Set()
     }
 
     limitDirection(direction: string, minimum: number | RestrictedValue, maximum: number | RestrictedValue) {
@@ -90,23 +90,33 @@ export class BoundedElement extends CellDLSVGElement {
         this.#controlRect.centroid.yValue.reassignMaximum(Infinity)
     }
 
-    move(svgPoint: PointLike, options: ElementMoveOptions={}) {
+//==============================================================================
+
+    startMove(svgPoint: PointLike, options: ElementMoveOptions={}) {
+        this.#controlRect.startMove(svgPoint)
+        this.#excludeConnectionIds = options?.excludeConnectionIds || new Set()
+    }
+
+    move(svgPoint: PointLike, options: ElementMoveOptions={}): boolean {
         const savedCentroid = this.centroid
         // This sets the control rect's attributes but doesn't paint anything
-        this.#controlRect.move(svgPoint, options)
-        this.setCentroid(this.#controlRect.centroid.point)
-        const centroidDelta = this.centroid.subtract(savedCentroid)
-        // Reset any restrictions for `elementBoundingBoxBoxMoved()`
-        this.unlimitDirection()
-        for (const path of this.#connectedPathElements.values()) {
-            if (!this.#excludeConnectionIds.has(path.connection.id)) {
-                path.elementBoundingBoxMoved(this, centroidDelta)
+
+        if (this.#controlRect.move(svgPoint, options)) {
+            this.setCentroid(this.#controlRect.centroid.point)
+            const centroidDelta = this.centroid.subtract(savedCentroid)
+            // Reset any restrictions for `elementBoundingBoxBoxMoved()`
+            this.unlimitDirection()
+            for (const path of this.#connectedPathElements.values()) {
+                if (!this.#excludeConnectionIds.has(path.connection.id)) {
+                    path.elementBoundingBoxMoved(this, centroidDelta)
+                }
             }
-        }
-        if (this.#controlRect.dirty) {
             this.celldlObject.redraw()
             this.svgBounds(true)  // Recalculate the element's bounds
+
+            return true
         }
+        return false
     }
 
     endMove() {
@@ -117,6 +127,8 @@ export class BoundedElement extends CellDLSVGElement {
             }
         }
     }
+
+//==============================================================================
 
     addPathElement(path: PathElement) {
         this.#connectedPathElements.set(path.id, path)
@@ -141,13 +153,26 @@ export class BoundedElement extends CellDLSVGElement {
         super.redraw()
     }
 
-    #reposition(centroid: Point) {
-        this.setCentroid(centroid)
-        this.#controlRect.reposition(centroid)
-        if (this.#controlRect.dirty) {
-            this.redraw()
-        }
+
+//==============================================================================
+
+    startResize() {
+        this.#controlRect.startResize()
+        super.startResize()
     }
+
+    resize(topLeftDelta: PointLike, bottomRightDelta: PointLike) {
+        this.#controlRect.resize(topLeftDelta, bottomRightDelta, true)
+        this.redraw()
+        super.resize(topLeftDelta, bottomRightDelta)
+    }
+
+    endResize() {
+        this.#controlRect.endResize()
+        super.endResize()
+    }
+
+//==============================================================================
 
     async updateImageElement(imageData: string) {
         const savedCorners = this.corners.map((point) => Point.fromPoint(point))

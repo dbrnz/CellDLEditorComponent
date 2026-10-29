@@ -146,12 +146,6 @@ export class SvgConnection extends CellDLSVGElement {
         this.#pathElements.forEach((element) => { element.drawControlHandles() })
     }
 
-    clearSelectedHandles() {
-        if (this.selected) {
-            this.#pathElements.forEach((element) => { element.clearControlHandles() })
-        }
-    }
-
     endMove() {
         if (this.#moveableElement) {
             this.#moveableElement.endMove()
@@ -223,17 +217,17 @@ export class SvgConnection extends CellDLSVGElement {
 
     getStyle(): Styling {
         return {
-            pathStyle: getStrokeString(this.svgElement, {
+            strokeStyle: getStrokeString(this.svgElement, {
                 colour: CONNECTION_COLOUR,
                 width: CONNECTION_WIDTH,
-                dashScale: CONNECTION_DASH
+                dashScale: 0   // CONNECTION_DASH
             })
         }
     }
 
     setStyle(styling: Styling) {
-        if (styling.pathStyle) {
-            setStrokeFromString(this.svgElement, styling.pathStyle)
+        if (styling.strokeStyle) {
+            setStrokeFromString(this.svgElement, styling.strokeStyle)
         }
     }
 }

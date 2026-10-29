@@ -120,7 +120,7 @@ export default class PanZoom {
     pointerMove(event: PointerEvent): boolean {
         if (this.#svgDiagram && this.#panning) {
             const delta = this.#pointerDownPosition.subtract(event).scalarScale(1.0 / this.#scale)
-            if (!delta.isZero()) {
+            if (!delta.isZero) {
                 const viewbox = this.#currentViewbox()
                 viewbox[0] += delta.x
                 viewbox[1] += delta.y

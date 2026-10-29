@@ -54,7 +54,7 @@ export type Styling = {
      * and if so, the length of a dash as a multiplier to apply to the stroke's
      * width.
      */
-    pathStyle?: string
+    strokeStyle?: string
 
     /**
      * How a block of text is styled.
@@ -85,6 +85,10 @@ export type StrokeAttributes = {
 
 //==============================================================================
 
+export const SVG_ICON_HEIGHT = 30
+
+//==============================================================================
+
 export const CONNECTION_ARROW_SIZE = [4, 4] // [W, H] pixels
 export const CONNECTION_SPLAY_PADDING = 16 // If <= 1.0 then fraction of elements width and height else pixels
 export const MAX_CONNECTION_SPLAY_PADDING = 20 // pixels
@@ -106,6 +110,7 @@ export const MEMBRANE_CORNER_RADIUS = 40
 export const MEMBRANE_DASH = 2  // * width
 export const MEMBRANE_GAP = 5
 export const MEMBRANE_STROKE_WIDTH = 3
+export const REGION_BACKGROUND = "#bbb"
 
 //==============================================================================
 

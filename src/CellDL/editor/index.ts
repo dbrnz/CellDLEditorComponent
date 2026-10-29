@@ -41,8 +41,9 @@ import { componentLibraryPlugin } from '#root/plugins'
 
 //==============================================================================
 
+import { DEFAULT_VIEW_STATE } from './defaults'
 import { EditorFrame } from './editorframe'
-import { DEFAULT_VIEW_STATE, editGuides, EDITOR_GRID_CLASS } from './editguides'
+import { editGuides, EDITOR_GRID_CLASS } from './editguides'
 import PanZoom from './panzoom'
 import { BoxMaker } from './boxmaker'
 
@@ -90,7 +91,8 @@ enum EDITOR_MODE {
     Selecting = 'SELECTING',
     PathDrawing = 'DRAW-PATH',
     AddingComponent = 'ADD-COMPONENT',
-    DrawCompartment = 'DRAW-COMPARTMENT'
+    DrawCompartment = 'DRAW-COMPARTMENT',
+    DrawRegion = 'DRAW-REGION'
 }
 
 const DEFAULT_EDITOR_MODE = EDITOR_MODE.Selecting
@@ -123,9 +125,11 @@ export function getElementId(element: SVGGraphicsElement): string {
 
 //==============================================================================
 
-const SVG_PANEL_ID = 'svg-panel'
-type PointerEventHandler = (eventType: string, svgElement: SVGGraphicsElement, svgCoords: PointLike) => boolean
+export type PointerEventHandler = (eventType: string, svgElement: SVGGraphicsElement, svgCoords: PointLike) => boolean
 
+//==============================================================================
+
+const SVG_PANEL_ID = 'svg-panel'
 
 export class CellDLEditor {
     static instance: CellDLEditor | null = null
@@ -394,7 +398,8 @@ export class CellDLEditor {
 
     #setDefaultCursor() {
         if (this.#editorMode === EDITOR_MODE.PathDrawing
-         || this.#editorMode === EDITOR_MODE.DrawCompartment) {
+         || this.#editorMode === EDITOR_MODE.DrawCompartment
+         || this.#editorMode === EDITOR_MODE.DrawRegion) {
             this.#svgDiagram?.style.setProperty('cursor', 'crosshair')
         } else {
             this.#svgDiagram?.style.removeProperty('cursor')
@@ -563,7 +568,9 @@ export class CellDLEditor {
 
     #unsetActiveObjects() {
         for (const activeObject of this.#activeObjects.values()) {
-            activeObject.clearControlHandles()
+            if (!activeObject.selected) {
+                activeObject.clearControlHandles()
+            }
             this.#activateObject(activeObject, false)
         }
         this.#activeObjects.clear()
@@ -644,8 +651,10 @@ export class CellDLEditor {
         // A drawing tool has been selected
 
         const tool = (<CustomEvent>event).detail.tool
-        if (tool === 'draw-closed-compartment') { // draw-background-region
+        if (tool === 'draw-closed-compartment') {
             this.#changeMode(EDITOR_MODE.DrawCompartment)
+        } else if (tool === 'draw-background-region') {
+            this.#changeMode(EDITOR_MODE.DrawRegion)
         }
 
     }
@@ -673,9 +682,9 @@ export class CellDLEditor {
         }
     }
 
-    #addCompartment() {
+    #addCompartmentRegion(isRegion?: boolean) {
         if (this.#boxMaker) {
-            const celldlObject = this.#boxMaker.makeCompartment()
+            const celldlObject = this.#boxMaker.makeCompartmentRegion(isRegion)
             this.#unsetActiveObjects()
             if (celldlObject) {
                 // Select newly added object
@@ -761,7 +770,7 @@ export class CellDLEditor {
 
     #selectionClickEvent(event: MouseEvent, _element: SVGGraphicsElement, clickedObject: CellDLObject|null) {
         if (clickedObject === null
-         || !event.metaKey
+         || !(event.metaKey || event.shiftKey)
          || !this.selectionSet.firstMoveableObject
          || !clickedObject.isMoveable
         ) {
@@ -770,30 +779,14 @@ export class CellDLEditor {
         }
         // Select when active object is clicked
         if (clickedObject && clickedObject === this.currentObject) {
-            if (event.metaKey) {
+            if (event.metaKey || event.shiftKey) {
                 if (clickedObject.selected) {
                     this.#unsetSelectedObject(clickedObject)
                 } else {
                     this.setSelectedObject(clickedObject)
                 }
             } else {
-                if (event.shiftKey
-                 && clickedObject.isMoveable
-                 && this.selectionSet.firstMoveableObject
-                 && clickedObject !== this.selectionSet.firstMoveableObject) {
-                    const boundingBox = this.selectionSet.firstMoveableObject?.celldlSvgElement?.svgBounds().union(clickedObject.celldlSvgElement!.svgBounds())
-                    if (boundingBox) {
-                        const selectedObjects = this.celldlDiagram!.objectsContainedIn(boundingBox)
-                                                                    .filter(c => c.exact)
-                                                                    .map(c => c.object)
-                                                                    .filter(c => c.isComponent)
-                        for (const selectedObject of selectedObjects) {
-                            this.setSelectedObject(selectedObject)
-                        }
-                    }
-                } else {
-                    this.setSelectedObject(clickedObject)
-                }
+                this.setSelectedObject(clickedObject)
             }
         }
     }
@@ -864,7 +857,8 @@ export class CellDLEditor {
                     this.#setActiveObjects([currentObject])
                 }
             }
-        } else if (this.#editorMode === EDITOR_MODE.DrawCompartment) {
+        } else if (this.#editorMode === EDITOR_MODE.DrawCompartment
+                || this.#editorMode === EDITOR_MODE.DrawRegion) {
             if (currentObject) {
                 element.style.removeProperty('cursor')
             }
@@ -885,6 +879,9 @@ export class CellDLEditor {
     }
 
     #pointerOutEvent(event: PointerEvent) {
+        if (this.#handlePointerEvents(event)) {
+            return
+        }
         const element = event.target as SVGGraphicsElement
         if (
             element === this.#svgDiagram ||
@@ -912,6 +909,7 @@ export class CellDLEditor {
         if (event.button === 2
          || (!event.shiftKey
           && this.#editorMode !== EDITOR_MODE.DrawCompartment
+          && this.#editorMode !== EDITOR_MODE.DrawRegion
           && this.#notDiagramElement(element))) {
             this.#svgDiagram?.style.removeProperty('cursor')
             this.#container?.style.setProperty('cursor', 'grab')
@@ -967,12 +965,13 @@ export class CellDLEditor {
                     this.moved = false
                 }
             }
-        } else if (this.#editorMode === EDITOR_MODE.DrawCompartment) {
+        } else if (this.#editorMode === EDITOR_MODE.DrawCompartment
+                || this.#editorMode === EDITOR_MODE.DrawRegion) {
             if (this.#boxMaker) {
                 this.#boxMaker.pointerEvent(event, svgPoint)
             } else {
                 this.unsetSelectedObjects()
-                this.#boxMaker = new BoxMaker(this, svgPoint, true)
+                this.#boxMaker = new BoxMaker(this, svgPoint, this.#editorMode === EDITOR_MODE.DrawCompartment)
                 this.#boxMaking = true
             }
         }
@@ -1006,7 +1005,8 @@ export class CellDLEditor {
                 this.#boxMaker.updateSelectedObjects()
             }
         } else if (this.#editorMode === EDITOR_MODE.Selecting
-                || this.#editorMode === EDITOR_MODE.DrawCompartment) {
+                || this.#editorMode === EDITOR_MODE.DrawCompartment
+                || this.#editorMode === EDITOR_MODE.DrawRegion) {
             if (this.#boxMaker) {
                 this.#boxMaker.pointerEvent(event, svgPoint)
             }
@@ -1050,14 +1050,17 @@ export class CellDLEditor {
                     this.#moveUndoState = null
                 }
             } else if (this.#editorMode === EDITOR_MODE.Selecting
-                    || this.#editorMode === EDITOR_MODE.DrawCompartment) {
+                    || this.#editorMode === EDITOR_MODE.DrawCompartment
+                    || this.#editorMode === EDITOR_MODE.DrawRegion) {
                 if (this.#boxMaker) {
-                    if (this.#editorMode === EDITOR_MODE.DrawCompartment) {
+                    if (this.#editorMode === EDITOR_MODE.DrawCompartment
+                     || this.#editorMode === EDITOR_MODE.DrawRegion) {
                         this.#boxMaker.pointerEvent(event, svgPoint)
-                        this.#addCompartment()
-                        this.#closeBoxMaker()
-                    } else if (!this.#boxMaker.pointerEvent(event, svgPoint)) {
-                        this.#closeBoxMaker()
+                        this.#addCompartmentRegion(this.#editorMode === EDITOR_MODE.DrawRegion)
+                        this.#closeBoxMaker(true)
+                    } else {
+                        this.#boxMaker.pointerEvent(event, svgPoint)
+                        this.#closeBoxMaker(false)  // Keep selected objects selected
                     }
                 }
                 this.#boxMaking = false
@@ -1065,9 +1068,9 @@ export class CellDLEditor {
         }
     }
 
-    #closeBoxMaker() {
+    #closeBoxMaker(clearSelected: boolean=true) {
         if (this.#boxMaker) {
-            this.#boxMaker.close()
+            this.#boxMaker.close(clearSelected)
             this.#boxMaker = null
         }
     }

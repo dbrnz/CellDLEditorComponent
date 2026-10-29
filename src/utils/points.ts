@@ -77,7 +77,7 @@ export class Point implements PointLike {
         return PointMath.equals(this, point)
     }
 
-    isZero(): boolean {
+    get isZero(): boolean {
         return PointMath.isZero(this)
     }
 

@@ -184,6 +184,7 @@ export class FixedControlPoint extends ControlPoint {
 //==============================================================================
 
 export class ControlRect {
+    #edgeAlign: boolean
     #gridAligned: boolean = true
     #topLeft!: RestrictedPoint
     #bottomRight!: RestrictedPoint
@@ -191,9 +192,13 @@ export class ControlRect {
     #centroid!: RestrictedPoint
     #normalisedCentre!: Point
     #moveOffset: Point = new Point()
+    #resizeBottomRight: Point = new Point()
+    #resizeCentroid: Point = new Point()
+    #resizeTopLeft: Point|undefined
     #svgElement: SVGRectElement | null = null
 
-    constructor(corner_0: RestrictedPoint, corner_1: RestrictedPoint, normalisedCentre: Point | null = null) {
+    constructor(corner_0: RestrictedPoint, corner_1: RestrictedPoint, normalisedCentre: Point|null = null, edgeAlign: boolean=false) {
+        this.#edgeAlign = edgeAlign
         this.setCornerPositions(corner_0, corner_1)
         this.assignCentroid(normalisedCentre || new Point(0.5, 0.5))
     }
@@ -228,7 +233,7 @@ export class ControlRect {
     }
 
     copy(): ControlRect {
-        return new ControlRect(this.#topLeft, this.#bottomRight, this.#normalisedCentre)
+        return new ControlRect(this.#topLeft, this.#bottomRight, this.#normalisedCentre, this.#edgeAlign)
     }
 
     setCornerPositions(corner_0: RestrictedPoint, corner_1: RestrictedPoint) {
@@ -256,23 +261,81 @@ export class ControlRect {
 
     startMove(point: PointLike) {
         // we need to know offset of pointer from centre of object
-        this.#moveOffset = Point.fromPoint(PointMath.subtract(this.#centroid, point))
+        this.#moveOffset = Point.fromPoint(PointMath.subtract(this.#edgeAlign ? this.#topLeft : this.#centroid, point))
     }
 
-    move(point: PointLike, options: GridAlignOptions={}) {
+    move(point: PointLike, options: GridAlignOptions={}): boolean {
         const position = this.#moveOffset?.add(point)
-        this.reposition(this.#gridAligned ? editGuides.gridAlign(position, options) : position)
+        return this.reposition(this.#gridAligned ? editGuides.gridAlign(position, options) : position)
     }
+
+//==============================================================================
+
+    startResize() {
+        this.#resizeTopLeft = Point.fromPoint(this.#topLeft)
+        this.#resizeCentroid = Point.fromPoint(this.#centroid)
+        this.#resizeBottomRight = Point.fromPoint(this.#bottomRight)
+    }
+
+    resize(topLeftDelta: PointLike, bottomRightDelta: PointLike, leftTransform: boolean) {
+        if (this.#resizeTopLeft) {
+            if (this.#edgeAlign) {
+                const sizeChange = Point.fromPoint(bottomRightDelta).subtract(topLeftDelta)
+                if (leftTransform) {
+                    this.#bottomRight.point = this.#resizeBottomRight.add(sizeChange)
+                } else {
+                    this.#topLeft.point = this.#resizeTopLeft.add(topLeftDelta)
+                    this.#bottomRight.point = this.#resizeBottomRight.add(bottomRightDelta)
+                }
+                this.#centroid.point = this.#resizeCentroid
+                                        .add(Point.fromPoint(topLeftDelta).scale(this.#normalisedCentre))
+                                        .add(Point.fromPoint(bottomRightDelta).scale({
+                                                x: 1 - this.#normalisedCentre.x,
+                                                y: 1 - this.#normalisedCentre.y
+                                            }))
+                this.#size = this.#size.add(sizeChange)
+            } else {
+                // This case is currently not used and untested...
+                const topLeft = this.#resizeTopLeft.add(topLeftDelta)
+                const bottomRight = this.#resizeBottomRight.add(bottomRightDelta)
+                this.#size = bottomRight.subtract(topLeft)
+                this.#centroid = RestrictedPoint.fromPoint(this.#size.scale(this.#normalisedCentre).add(topLeft))
+                this.#topLeft.point = this.#centroid.point.subtract(this.#size.scale(this.#normalisedCentre))
+                this.#bottomRight.point = PointMath.add(this.#topLeft.point, this.#size)
+            }
+        }
+    }
+
+    endResize() {
+        this.#resizeTopLeft = undefined
+    }
+
+//==============================================================================
 
     /**
-     * Reposition the rectangle.
+     * Reposition the rectangle without changing its size.
      *
-     * @param centroid - The new position of the rectangle's centroid.
+     * @param centroid - The new position of the rectangle's centroid or top-left corner.
      */
-    reposition(centroid: PointLike) {
-        this.#centroid.point = centroid // this will check limits
-        this.#topLeft.point = this.#centroid.point.subtract(this.#size.scale(this.#normalisedCentre))
-        this.#bottomRight.point = PointMath.add(this.#topLeft.point, this.#size)
+    reposition(position: PointLike): boolean {
+        if (this.#edgeAlign) {
+            const delta = this.#topLeft.point.subtract(position)
+            if (!delta.isZero) {
+                this.#topLeft.point = position
+                this.#bottomRight.point = PointMath.add(this.#topLeft.point, this.#size)
+                this.#centroid.point = this.#centroid.point.subtract(delta)
+            return true
+            }
+        } else {
+            const delta = this.#centroid.point.subtract(position)
+            if (!delta.isZero) {
+                this.#centroid.point = position // this will check limits
+                this.#topLeft.point = this.#centroid.point.subtract(this.#size.scale(this.#normalisedCentre))
+                this.#bottomRight.point = PointMath.add(this.#topLeft.point, this.#size)
+            return true
+            }
+        }
+        return false
     }
 
     svg(attributes: StringProperties = {}) {

@@ -10,7 +10,6 @@
                 @change="emitChange"
             )
             label Corner radius (px)
-        Divider
 </template>
 
 <script setup lang="ts">

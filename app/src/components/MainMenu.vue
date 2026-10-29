@@ -117,6 +117,14 @@ const viewItems = {
     label: 'View',
     items: [
         {
+            label: 'Axes',
+            icon: getCheckedIcon(!!props.viewState.showAxes),
+            command: (e: MenuItemCommandEvent) => {
+                e.item.icon = toggleCheckedIcon(e.item)
+                emit('view-action', 'show-axes', itemChecked(e.item))
+            }
+        },
+        {
             label: 'Grid',
             icon: getCheckedIcon(!!props.viewState.showGrid),
             command: (e: MenuItemCommandEvent) => {
@@ -155,7 +163,7 @@ const menuItems = [
                 }
             },
             {
-                label: 'Open...',
+                label: 'Open',
                 shortcut: isWindowsOrLinux ? 'Ctrl+O' : isMacOs ? '⌘O' : undefined,
                 command: () => {
                     emit('file-action', 'open')
